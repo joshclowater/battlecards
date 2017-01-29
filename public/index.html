@@ -1,13 +1,14 @@
+<title>Battlecards</title>
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <script>
   var socket = io();
-  socket.on('waitingForAnotherUser', function(response) {
-    console.log(response);
-    $('body').html('waiting for another user...');
+  socket.on('waitingForAnotherPlayer', function() {
+    console.log('waitingForAnotherPlayer');
+    $('body').html('waiting for another player...');
   });
-  socket.on('gameStarted', function(response) {
-    console.log(response);
+  socket.on('gameStarted', function(game) {
+    console.log('gameStarted', game);
     $('body').html('LETS GO!');
   });
 </script>
