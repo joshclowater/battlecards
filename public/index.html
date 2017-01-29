@@ -1,0 +1,13 @@
+<script src="/socket.io/socket.io.js"></script>
+<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+<script>
+  var socket = io();
+  socket.on('waitingForAnotherUser', function(response) {
+    console.log(response);
+    $('body').html('waiting for another user...');
+  });
+  socket.on('gameStarted', function(response) {
+    console.log(response);
+    $('body').html('LETS GO!');
+  });
+</script>
