@@ -2,44 +2,59 @@ var express = require('express');
 var path = require('path');
 var logger = require('morgan');
 var bodyParser = require('body-parser');
+var uuid = require('uuid/v4');
 
 var app = express();
-
 app.set('port', process.env.PORT || 3000);
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static(path.join(__dirname, 'public')));
 
-/**
- * Socket.io stuff.
- */
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
-var onlineUsers = 0;
-var gameStarted = false;
+
+var games = {
+  // Games will be stored here with uuids as keys
+  gameWithPlayerWaiting: undefined
+};
+var sockets = {};
 
 io.sockets.on('connection', function(socket) {
-  onlineUsers++;
-  console.log(onlineUsers + ' user(s) connected');
+  var game;
+  var playerId = uuid();
+  sockets[playerId] = socket;
 
-  if (onlineUsers == 1) {
-    console.log('one player joined');
-    io.sockets.emit('waitingForAnotherUser', {});
-  } else if (onlineUsers == 2) {
-    console.log('second player joined');
-    gameStarted = true;
-    io.sockets.emit('gameStarted', {'TODO': 'more things'});
+  if (games.gameWithPlayerWaiting === undefined) {
+    var gameId = uuid();
+    games.gameWithPlayerWaiting = gameId;
+    games[gameId] = {
+      id: gameId,
+      playerOne: {
+        playerId
+      }
+    };
+    game = games[gameId];
+
+    console.log('Player one (' + playerId + ') joined game ' + game.id);
+
+    socket.emit('waitingForAnotherPlayer');
+  } else {
+    game = games[games.gameWithPlayerWaiting];
+    games.gameWithPlayerWaiting = undefined;
+    game.playerTwo = { playerId };
+
+    console.log('Player two (' + playerId + ') joined game ' + game.id);
+
+    sockets[game.playerOne.playerId].emit('gameStarted', game);
+    socket.emit('gameStarted', game);
   }
 
-  socket.on('disconnect', function() {
-    console.log('User disconnected');
-    onlineUsers--;
-  });
-});
+  console.log('games: ', games);
 
-app.get('/test', function(req, res, next) {
-  res.send({ message: 'were in' });
+  socket.on('disconnect', function() {
+    console.error('Player ' + playerId + ' disconnected');
+  });
 });
 
 server.listen(app.get('port'), function() {
