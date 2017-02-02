@@ -30,6 +30,7 @@ io.sockets.on('connection', function(socket) {
     games.gameWithPlayerWaiting = gameId;
     games[gameId] = {
       id: gameId,
+      gameStarted: false,
       playerOne: {
         playerId
       }
@@ -43,14 +44,34 @@ io.sockets.on('connection', function(socket) {
     game = games[games.gameWithPlayerWaiting];
     games.gameWithPlayerWaiting = undefined;
     game.playerTwo = { playerId };
+    if (Math.random() > 0.5) {
+      game.playersTurn = game.playerOne.playerId;
+      game.inactivePlayer = game.playerTwo.playerId;
+    } else {
+      game.playersTurn = game.playerTwo.playerId;
+      game.inactivePlayer = game.playerOne.playerId;
+    }
+    game.gameStarted = true;
 
     console.log('Player two (' + playerId + ') joined game ' + game.id);
 
-    sockets[game.playerOne.playerId].emit('gameStarted', game);
-    socket.emit('gameStarted', game);
+    sockets[game.playerOne.playerId].emit('gameStarted', { game, playerId: game.playerOne.playerId });
+    socket.emit('gameStarted', { game, playerId });
   }
 
-  console.log('games: ', games);
+  socket.on('endTurn', function() {
+    console.log('Turn ended by', playerId);
+    if (game.gameStarted && game.playersTurn === playerId) {
+      const playersTurn = game.inactivePlayer;
+      game.inactivePlayer = game.playersTurn;
+      game.playersTurn = playersTurn;
+
+      sockets[game.playersTurn].emit('turnEnded', { playersTurn: game.playersTurn });
+      sockets[game.inactivePlayer].emit('turnEnded', { playersTurn: game.playersTurn });
+    } else {
+      socket.emit('invalidMove', 'Not your turn');
+    }
+  });
 
   socket.on('disconnect', function() {
     console.error('Player ' + playerId + ' disconnected');
