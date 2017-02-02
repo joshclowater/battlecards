@@ -2,13 +2,37 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <script>
+  var myPlayerId;
   var socket = io();
+
   socket.on('waitingForAnotherPlayer', function() {
     console.log('waitingForAnotherPlayer');
     $('body').html('waiting for another player...');
   });
-  socket.on('gameStarted', function(game) {
-    console.log('gameStarted', game);
-    $('body').html('LETS GO!');
+  socket.on('gameStarted', function(response) {
+    console.log('gameStarted', response);
+    myPlayerId = response.playerId;
+    $('body').html(
+      'Game started. Curent turn: ' + (response.game.playersTurn === myPlayerId ? 'Me' : 'Other player')
+    );
+    if (response.game.playersTurn === myPlayerId) {
+      $('body').append('<button onclick="endTurn()">End turn</button>');
+    }
+  });
+  socket.on('invalidMove', function(message) {
+    console.warn('Invalid move:', message);
+  });
+
+  function endTurn() {
+    socket.emit('endTurn');
+  }
+  socket.on('turnEnded', function(response) {
+    console.log('turnEnded', response);
+    $('body').html(
+      'Game started. Curent turn: ' + (response.playersTurn === myPlayerId ? 'Me' : 'Other player')
+    );
+    if (response.playersTurn === myPlayerId) {
+      $('body').append('<button onclick="endTurn()">End turn</button>');
+    }
   });
 </script>
