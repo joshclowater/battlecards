@@ -2,7 +2,10 @@ var express = require('express');
 var path = require('path');
 var logger = require('morgan');
 var bodyParser = require('body-parser');
+var _ = require('lodash');
 var uuid = require('uuid/v4');
+
+var deckFile = require('./src/deck');
 
 var app = express();
 app.set('port', process.env.PORT || 3000);
@@ -31,32 +34,48 @@ io.sockets.on('connection', function(socket) {
     games[gameId] = {
       id: gameId,
       gameStarted: false,
-      playerOne: {
-        playerId
-      }
+      players: {},
     };
     game = games[gameId];
+    game.players[playerId] = {
+      playerId,
+      deck: _.cloneDeep(deckFile.deck)
+    }
 
-    console.log('Player one (' + playerId + ') joined game ' + game.id);
+    console.log('First player (' + playerId + ') joined game ' + game.id);
 
     socket.emit('waitingForAnotherPlayer');
   } else {
     game = games[games.gameWithPlayerWaiting];
     games.gameWithPlayerWaiting = undefined;
-    game.playerTwo = { playerId };
+    game.players[playerId] = {
+      playerId,
+      deck: _.cloneDeep(deckFile.deck)
+    };
+
     if (Math.random() > 0.5) {
-      game.playersTurn = game.playerOne.playerId;
-      game.inactivePlayer = game.playerTwo.playerId;
+      game.playersTurn = Object.keys(game.players)[0];
+      game.inactivePlayer =  Object.keys(game.players)[1];
     } else {
-      game.playersTurn = game.playerTwo.playerId;
-      game.inactivePlayer = game.playerOne.playerId;
+      game.playersTurn =  Object.keys(game.players)[1];
+      game.inactivePlayer =  Object.keys(game.players)[0];
     }
     game.gameStarted = true;
 
-    console.log('Player two (' + playerId + ') joined game ' + game.id);
+    console.log('Second player (' + playerId + ') joined game ' + game.id);
 
-    sockets[game.playerOne.playerId].emit('gameStarted', { game, playerId: game.playerOne.playerId });
-    socket.emit('gameStarted', { game, playerId });
+    sockets[game.playersTurn].emit('gameStarted', {
+      playerId: game.playersTurn,
+      playersTurn: game.playersTurn,
+      myDeckSize: game.players[game.playersTurn].deck.length,
+      opponentsDeckSize: game.players[game.inactivePlayer].deck.length
+    });
+    sockets[game.inactivePlayer].emit('gameStarted', {
+      playerId: game.inactivePlayer,
+      playersTurn: game.playersTurn,
+      myDeckSize: game.players[game.inactivePlayer].deck.length,
+      opponentsDeckSize: game.players[game.playersTurn].deck.length
+    });
   }
 
   socket.on('endTurn', function() {
@@ -74,6 +93,7 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('disconnect', function() {
+    // TODO kill game when one or more players disconnect, send appropriate responses
     console.error('Player ' + playerId + ' disconnected');
   });
 });

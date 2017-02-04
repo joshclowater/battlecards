@@ -1,4 +1,11 @@
 <title>Battlecards</title>
+
+<body>
+  <div id="opponent"></div>
+  <div id="gameStatus"></div>
+  <div id="me"></div>
+</body>
+
 <script src="/socket.io/socket.io.js"></script>
 <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
 <script>
@@ -7,17 +14,19 @@
 
   socket.on('waitingForAnotherPlayer', function() {
     console.log('waitingForAnotherPlayer');
-    $('body').html('waiting for another player...');
+    $('#gameStatus').html('waiting for another player...');
   });
   socket.on('gameStarted', function(response) {
     console.log('gameStarted', response);
     myPlayerId = response.playerId;
-    $('body').html(
-      'Game started. Curent turn: ' + (response.game.playersTurn === myPlayerId ? 'Me' : 'Other player')
+    $('#gameStatus').html(
+      'Game started. Curent turn: ' + (response.playersTurn === myPlayerId ? 'Me' : 'Other player')
     );
-    if (response.game.playersTurn === myPlayerId) {
-      $('body').append('<button onclick="endTurn()">End turn</button>');
+    if (response.playersTurn === myPlayerId) {
+      $('#gameStatus').append('<button onclick="endTurn()">End turn</button>');
     }
+    $('#opponent').html('Opponent\'s deck: ' + response.opponentsDeckSize);
+    $('#me').html('My deck: ' + response.myDeckSize)
   });
   socket.on('invalidMove', function(message) {
     console.warn('Invalid move:', message);
@@ -28,11 +37,11 @@
   }
   socket.on('turnEnded', function(response) {
     console.log('turnEnded', response);
-    $('body').html(
+    $('#gameStatus').html(
       'Game started. Curent turn: ' + (response.playersTurn === myPlayerId ? 'Me' : 'Other player')
     );
     if (response.playersTurn === myPlayerId) {
-      $('body').append('<button onclick="endTurn()">End turn</button>');
+      $('#gameStatus').append('<button onclick="endTurn()">End turn</button>');
     }
   });
 </script>
