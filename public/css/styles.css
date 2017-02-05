@@ -1,0 +1,31 @@
+.hand {
+  white-space: nowrap;
+  overflow-x: auto;
+}
+
+.card {
+  display: inline-block;
+  border: 1px solid;
+  border-radius: 3px;
+  margin-right: 5px;
+  width: 160px;
+}
+
+.card div {
+  padding: 5px;
+}
+
+.card .title {
+  text-overflow: ellipsis;
+  overflow: hidden;
+  border-bottom: 1px solid;
+}
+
+.card .picture {
+  height: 100px;
+  border-bottom: 1px solid;
+}
+
+.card .attributes .def {
+  float: right;
+}
