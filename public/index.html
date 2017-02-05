@@ -1,47 +1,92 @@
-<title>Battlecards</title>
+<html>
+  <title>Battlecards</title>
+  <head>
+    <link href="css/styles.css" rel="stylesheet">
+  </head>
+  <body>
+    <div id="game" style="display: none;">
+      <div id="opponent">
+        <div class="hand"></div>
+        <div class="deck"></div>
+        <div class="shields"></div>
+      </div>
+      <hr />
+      <div id="me">
+        <div class="shields"></div>
+        <div class="deck"></div>
+        <div class="hand"></div>
+      </div>
+    </div>
+    <div id="gameStatus"></div>
+  </body>
 
-<body>
-  <div id="opponent"></div>
-  <div id="gameStatus"></div>
-  <div id="me"></div>
-</body>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+  <script>
+    var myPlayerId;
+    var socket = io();
 
-<script src="/socket.io/socket.io.js"></script>
-<script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
-<script>
-  var myPlayerId;
-  var socket = io();
+    socket.on('waitingForAnotherPlayer', function() {
+      console.log('waitingForAnotherPlayer');
+      $('#gameStatus').html('waiting for another player...');
+    });
+    socket.on('gameStarted', function(response) {
+      console.log('gameStarted', response);
+      myPlayerId = response.playerId;
+      $('#game').show();
+      $('#gameStatus').html(
+        'Game started. Curent turn: ' + (response.playersTurn === myPlayerId ? 'Me' : 'Other player')
+      );
+      if (response.playersTurn === myPlayerId) {
+        $('#gameStatus').append('<button onclick="endTurn()">End turn</button>');
+      }
+      $('#opponent .deck').html('Opponent\'s deck: ' + response.opponentsDeckSize);
+      $('#opponent .shields').html('Opponent\'s shields: ' + response.opponentsShieldsSize);
+      $('#opponent .hand').html('Opponent\'s hand: ' + response.opponentsHandSize);
+      $('#me .deck').html('My deck: ' + response.myDeckSize);
+      $('#me .shields').html('My shields: ' + response.myShieldsSize);
+      response.myHand.forEach(function(card) {
+        $('#me .hand').append(
+          '<div class="card">' +
+            '<div class="title" title="' + card.name + '">' + card.name + '</div>' +
+            '<div class="picture"></div>' +
+            '<div class="attributes">' +
+              '<span class="atk">Atk: ' + card.attributes.attack + '</span>' +
+              '<span class="def">Def: ' + card.attributes.defense + '</span>' +
+            '</div>' +
+          '</div>'
+        );
+      });
+    });
+    socket.on('invalidMove', function(message) {
+      console.warn('Invalid move:', message);
+    });
 
-  socket.on('waitingForAnotherPlayer', function() {
-    console.log('waitingForAnotherPlayer');
-    $('#gameStatus').html('waiting for another player...');
-  });
-  socket.on('gameStarted', function(response) {
-    console.log('gameStarted', response);
-    myPlayerId = response.playerId;
-    $('#gameStatus').html(
-      'Game started. Curent turn: ' + (response.playersTurn === myPlayerId ? 'Me' : 'Other player')
-    );
-    if (response.playersTurn === myPlayerId) {
-      $('#gameStatus').append('<button onclick="endTurn()">End turn</button>');
+    function endTurn() {
+      socket.emit('endTurn');
     }
-    $('#opponent').html('Opponent\'s deck: ' + response.opponentsDeckSize);
-    $('#me').html('My deck: ' + response.myDeckSize)
-  });
-  socket.on('invalidMove', function(message) {
-    console.warn('Invalid move:', message);
-  });
-
-  function endTurn() {
-    socket.emit('endTurn');
-  }
-  socket.on('turnEnded', function(response) {
-    console.log('turnEnded', response);
-    $('#gameStatus').html(
-      'Game started. Curent turn: ' + (response.playersTurn === myPlayerId ? 'Me' : 'Other player')
-    );
-    if (response.playersTurn === myPlayerId) {
-      $('#gameStatus').append('<button onclick="endTurn()">End turn</button>');
-    }
-  });
-</script>
+    socket.on('turnEnded', function(response) {
+      console.log('turnEnded', response);
+      $('#gameStatus').html(
+        'Curent turn: ' + (response.playersTurn === myPlayerId ? 'Me' : 'Other player')
+      );
+      if (response.playersTurn === myPlayerId) {
+        $('#gameStatus').append('<button onclick="endTurn()">End turn</button>');
+        var card = response.cardDrawn;
+        $('#me .hand').append(
+          '<div class="card">' +
+            '<div class="title" title="' + card.name + '">' + card.name + '</div>' +
+            '<div class="picture"></div>' +
+            '<div class="attributes">' +
+              '<span class="atk">Atk: ' + card.attributes.attack + '</span>' +
+              '<span class="def">Def: ' + card.attributes.defense + '</span>' +
+            '</div>' +
+          '</div>'
+        );
+        $('#me .deck').html('My deck: ' + response.myDeckSize);
+      } else {
+        $('#opponent .deck').html('Opponent\'s deck: ' + response.opponentsDeckSize);
+      }
+    });
+  </script>
+</html>

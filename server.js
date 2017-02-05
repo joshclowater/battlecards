@@ -5,7 +5,7 @@ var bodyParser = require('body-parser');
 var _ = require('lodash');
 var uuid = require('uuid/v4');
 
-var deckFile = require('./src/deck');
+var deckUtils = require('./src/deck');
 
 var app = express();
 app.set('port', process.env.PORT || 3000);
@@ -17,6 +17,11 @@ app.use(express.static(path.join(__dirname, 'public')));
 var server = require('http').createServer(app);
 var io = require('socket.io')(server);
 
+// Constants
+var numCardsOnGameStart = 5;
+var numShieldsOnGameStart = 3;
+
+// Game/session data
 var games = {
   // Games will be stored here with uuids as keys
   gameWithPlayerWaiting: undefined
@@ -39,7 +44,15 @@ io.sockets.on('connection', function(socket) {
     game = games[gameId];
     game.players[playerId] = {
       playerId,
-      deck: _.cloneDeep(deckFile.deck)
+      deck: _.cloneDeep(deckUtils.deck),
+      hand: [],
+      shields: []
+    };
+    for (var i = 0; i < numCardsOnGameStart; i++) {
+      game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
+    }
+    for (var i = 0; i < numShieldsOnGameStart; i++) {
+      game.players[playerId].shields.push(deckUtils.drawFrom(game.players[playerId].deck));
     }
 
     console.log('First player (' + playerId + ') joined game ' + game.id);
@@ -50,9 +63,18 @@ io.sockets.on('connection', function(socket) {
     games.gameWithPlayerWaiting = undefined;
     game.players[playerId] = {
       playerId,
-      deck: _.cloneDeep(deckFile.deck)
+      deck: _.cloneDeep(deckUtils.deck),
+      hand: [],
+      shields: []
     };
+    for (var i = 0; i < numCardsOnGameStart; i++) {
+      game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
+    }
+    for (var i = 0; i < numShieldsOnGameStart; i++) {
+      game.players[playerId].shields.push(deckUtils.drawFrom(game.players[playerId].deck));
+    }
 
+    // Randomly set who goes first
     if (Math.random() > 0.5) {
       game.playersTurn = Object.keys(game.players)[0];
       game.inactivePlayer =  Object.keys(game.players)[1];
@@ -64,29 +86,31 @@ io.sockets.on('connection', function(socket) {
 
     console.log('Second player (' + playerId + ') joined game ' + game.id);
 
-    sockets[game.playersTurn].emit('gameStarted', {
-      playerId: game.playersTurn,
-      playersTurn: game.playersTurn,
-      myDeckSize: game.players[game.playersTurn].deck.length,
-      opponentsDeckSize: game.players[game.inactivePlayer].deck.length
-    });
-    sockets[game.inactivePlayer].emit('gameStarted', {
-      playerId: game.inactivePlayer,
-      playersTurn: game.playersTurn,
-      myDeckSize: game.players[game.inactivePlayer].deck.length,
-      opponentsDeckSize: game.players[game.playersTurn].deck.length
-    });
+    sockets[game.playersTurn].emit('gameStarted', createGameToSend(game, game.playersTurn, game.inactivePlayer));
+    sockets[game.inactivePlayer].emit('gameStarted', createGameToSend(game, game.inactivePlayer, game.playersTurn));
   }
 
   socket.on('endTurn', function() {
     console.log('Turn ended by', playerId);
     if (game.gameStarted && game.playersTurn === playerId) {
+      // Switch whose turn it is
       const playersTurn = game.inactivePlayer;
       game.inactivePlayer = game.playersTurn;
       game.playersTurn = playersTurn;
 
-      sockets[game.playersTurn].emit('turnEnded', { playersTurn: game.playersTurn });
-      sockets[game.inactivePlayer].emit('turnEnded', { playersTurn: game.playersTurn });
+      // Active player draw card
+      var cardDrawn = deckUtils.drawFrom(game.players[game.playersTurn].deck);
+      game.players[game.playersTurn].hand.push(cardDrawn);
+
+      sockets[game.playersTurn].emit('turnEnded', {
+        playersTurn: game.playersTurn,
+        cardDrawn,
+        myDeckSize: game.players[game.playersTurn].deck.length
+      });
+      sockets[game.inactivePlayer].emit('turnEnded', {
+        playersTurn: game.playersTurn,
+        opponentsDeckSize: game.players[game.playersTurn].deck.length
+      });
     } else {
       socket.emit('invalidMove', 'Not your turn');
     }
@@ -97,6 +121,19 @@ io.sockets.on('connection', function(socket) {
     console.error('Player ' + playerId + ' disconnected');
   });
 });
+
+function createGameToSend(game, me, otherPlayer) {
+  return {
+    playerId: me,
+    playersTurn: game.playersTurn,
+    myDeckSize: game.players[me].deck.length,
+    myShieldsSize: game.players[me].shields.length,
+    myHand: game.players[me].hand,
+    opponentsDeckSize: game.players[otherPlayer].deck.length,
+    opponentsShieldsSize: game.players[otherPlayer].shields.length,
+    opponentsHandSize: game.players[otherPlayer].hand.length
+  };
+}
 
 server.listen(app.get('port'), function() {
   console.log('Express server listening on port ' + app.get('port'));
