@@ -269,7 +269,24 @@
           </div>
           <div class="monsters scrollX">
             <div class="scrollXCardContainer">
-              <div v-for="n in 5" class="card cardPlaceholder"></div>
+              <div v-for="card in opponent.monsters" class="card">
+                <div class="title" v-bind:title="card.name">
+                  <span>
+                    {{ card.name }}
+                  </span>
+                </div>
+                <div class="atk">
+                  <span>
+                    Atk: {{ card.attributes.attack }}
+                  </span>
+                </div>
+                <div class="def">
+                  <span>
+                    Def: {{ card.attributes.defense }}
+                  </span>
+                </div>
+              </div>
+              <div v-for="n in (5 - opponent.monsters.length)" class="card cardPlaceholder"></div>
             </div>
           </div>
         </div>
@@ -277,7 +294,24 @@
         <div id="me">
           <div class="monsters scrollX">
             <div class="scrollXCardContainer">
-              <div v-for="n in 5" class="card cardPlaceholder"></div>
+              <div v-for="card in myPlayer.monsters" class="card">
+                <div class="title" v-bind:title="card.name">
+                  <span>
+                    {{ card.name }}
+                  </span>
+                </div>
+                <div class="atk">
+                  <span>
+                    Atk: {{ card.attributes.attack }}
+                  </span>
+                </div>
+                <div class="def">
+                  <span>
+                    Def: {{ card.attributes.defense }}
+                  </span>
+                </div>
+              </div>
+              <div v-for="n in (5 - myPlayer.monsters.length)" class="card cardPlaceholder"></div>
             </div>
           </div>
           <div class="magic scrollX">
@@ -291,7 +325,7 @@
                 <div class="title" v-bind:title="card.name">
                   <span>
                     {{ card.name }}
-                  <span>
+                  </span>
                 </div>
                 <div class="atk">
                   <span>
@@ -342,6 +376,7 @@
 </template>
 
 <script>
+  import { cloneDeep } from 'lodash';
   import BattleKardsDetails from './battlekards_details.vue';
 
   export default {
@@ -389,12 +424,15 @@
           this.opponent = {
             deckSize: response.opponentsDeckSize,
             shieldsSize: response.opponentsShieldsSize,
-            handSize: response.opponentsHandSize
+            handSize: response.opponentsHandSize,
+            monsters: [],
           };
           this.myPlayer = {
             deckSize: response.myDeckSize,
             shieldsSize: response.myShieldsSize,
-            hand: response.myHand
+            hand: response.myHand,
+            monsters: [],
+
           };
         });
 
@@ -407,6 +445,26 @@
           } else {
             this.opponent.deckSize = response.opponentsDeckSize;
           }
+        });
+
+        this.socket.on('summoned', (card) => {
+          console.log('Summoned: ', card);
+
+          const monsterIndex = this.myPlayer.hand.findIndex(function(cardInHand) { // find card index
+            return cardInHand.id === card.id;
+          });
+
+          const monster = cloneDeep(this.myPlayer.hand[monsterIndex]);
+
+          this.myPlayer.hand.splice(monsterIndex, 1);
+          this.myPlayer.monsters.push(monster);
+
+        });
+
+        this.socket.on('opponentSummoned', (response) => {
+          console.log('Opponent summoned: ', response);
+          this.opponent.monsters.push(response.monster);
+          this.opponent.handSize = response.opponentsHandSize;
         });
 
         this.socket.on('win', (message) => {

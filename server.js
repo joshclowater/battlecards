@@ -48,14 +48,18 @@ io.sockets.on('connection', function(socket) {
     games[gameId] = {
       id: gameId,
       gameStarted: false,
-      players: {},
+      players: {}
+
     };
     game = games[gameId];
     game.players[playerId] = {
       playerId,
       deck: _.cloneDeep(deckUtils.deck),
       hand: [],
-      shields: []
+      shields: [],
+      monsters:[],
+      hasSummoned: false //To prevent summoner from summoning more than once
+
     };
     for (let i = 0; i < numCardsOnGameStart; i++) {
       game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
@@ -74,7 +78,9 @@ io.sockets.on('connection', function(socket) {
       playerId,
       deck: _.cloneDeep(deckUtils.deck),
       hand: [],
-      shields: []
+      shields: [],
+      monsters:[],
+      hasSummoned: false,
     };
     for (let i = 0; i < numCardsOnGameStart; i++) {
       game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
@@ -106,7 +112,7 @@ io.sockets.on('connection', function(socket) {
       const playersTurn = game.inactivePlayer;
       game.inactivePlayer = game.playersTurn;
       game.playersTurn = playersTurn;
-
+      game.players[game.playersTurn].hasSummoned=false;
       // Active player draw card
       const cardDrawn = deckUtils.drawFrom(game.players[game.playersTurn].deck);
       game.players[game.playersTurn].hand.push(cardDrawn);
@@ -118,13 +124,40 @@ io.sockets.on('connection', function(socket) {
       });
       sockets[game.inactivePlayer].emit('turnEnded', {
         playersTurn: game.playersTurn,
-        opponentsDeckSize: game.players[game.playersTurn].deck.length
+        opponentsDeckSize: game.players[game.playersTurn].deck.length,
+        myhandSize: game.players[game.playersTurn].hand.length
       });
     } else {
       socket.emit('invalidMove', 'Not your turn');
     }
   });
 
+    //Function for Summon button, for player summoning
+  socket.on('summon', function(cardId) {
+
+    if (game.gameStarted && game.playersTurn === playerId && !game.players[playerId].hasSummoned){ // prevents multiple summoning
+
+      game.players[playerId].hasSummoned = true; //player cannot summon again
+
+      var monsterIndex = game.players[game.playersTurn].hand.findIndex(function(cardInHand) { // find card index
+        return cardInHand.id === cardId;
+      });
+
+      var monster = _.cloneDeep(game.players[game.playersTurn].hand[monsterIndex]);
+
+      game.players[game.playersTurn].hand.splice(monsterIndex, 1); // remove monster from hand
+
+      game.players[game.playersTurn].monsters.push(monster);// add monster
+
+      // pass cloned info?? of monster
+      socket.emit('summoned', monster);
+      sockets[game.inactivePlayer].emit('opponentSummoned', {
+        monster,
+        opponentsHandSize: game.players[game.playersTurn].hand.length
+      }); //Show monster on opponents UI
+
+    }
+  });
   socket.on('disconnect', function() {
     // If only one player waiting
     if (games.gameWithPlayerWaiting === game.id) {

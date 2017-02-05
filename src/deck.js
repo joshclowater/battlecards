@@ -1,7 +1,9 @@
 var _ = require('lodash');
+var uuid = require('uuid/v4');
 
 var deck = exports.deck = [
   {
+    id: uuid(),
     name: 'The little cornpop that could',
     type: 'monster',
     attributes: {
@@ -9,6 +11,7 @@ var deck = exports.deck = [
       defense: 800,
     }
   }, {
+    id: uuid(),
     name: 'Tree',
     type: 'monster',
     attributes: {
@@ -16,6 +19,7 @@ var deck = exports.deck = [
       defense: 1300,
     }
   }, {
+    id: uuid(),
     name: 'Pikachu',
     type: 'monster',
     attributes: {
@@ -23,6 +27,7 @@ var deck = exports.deck = [
       defense: 750,
     }
   }, {
+    id: uuid(),
     name: 'I.T.',
     type: 'monster',
     attributes: {
@@ -30,6 +35,7 @@ var deck = exports.deck = [
       defense: 500,
     }
   }, {
+    id: uuid(),
     name: 'Fly #1',
     type: 'monster',
     attributes: {
@@ -37,6 +43,7 @@ var deck = exports.deck = [
       defense: 100,
     }
   }, {
+    id: uuid(),
     name: 'Mike Holmes',
     type: 'monster',
     attributes: {
@@ -44,6 +51,7 @@ var deck = exports.deck = [
       defense: 1000,
     }
   }, {
+    id: uuid(),
     name: 'Generic Warrior',
     type: 'monster',
     attributes: {
@@ -51,6 +59,7 @@ var deck = exports.deck = [
       defense: 1400,
     }
   }, {
+    id: uuid(),
     name: 'Cactuar',
     type: 'monster',
     attributes: {
@@ -58,6 +67,7 @@ var deck = exports.deck = [
       defense: 1200,
     }
   }, {
+    id: uuid(),
     name: 'Salad Fingers Card',
     type: 'monster',
     attributes: {
@@ -65,6 +75,7 @@ var deck = exports.deck = [
       defense: 666,
     }
   }, {
+    id: uuid(),
     name: 'Blob',
     type: 'monster',
     attributes: {
@@ -72,6 +83,7 @@ var deck = exports.deck = [
       defense: 1000,
     }
   }, {
+    id: uuid(),
     name: 'Giant Douche',
     type: 'monster',
     attributes: {
@@ -79,6 +91,7 @@ var deck = exports.deck = [
       defense: 1000,
     }
   }, {
+    id: uuid(),
     name: 'Turd Monster',
     type: 'monster',
     attributes: {
@@ -86,6 +99,7 @@ var deck = exports.deck = [
       defense: 600,
     }
   }, {
+    id: uuid(),
     name: 'Triconderoga',
     type: 'monster',
     attributes: {
@@ -93,6 +107,7 @@ var deck = exports.deck = [
       defense: 333,
     }
   }, {
+    id: uuid(),
     name: 'James Bond',
     type: 'monster',
     attributes: {
@@ -100,6 +115,7 @@ var deck = exports.deck = [
       defense: 550,
     }
   }, {
+    id: uuid(),
     name: 'Shield warrior',
     type: 'monster',
     attributes: {
@@ -107,6 +123,7 @@ var deck = exports.deck = [
       defense: 1400,
     }
   }, {
+    id: uuid(),
     name: 'Mario',
     type: 'monster',
     attributes: {
@@ -114,6 +131,7 @@ var deck = exports.deck = [
       defense: 1200,
     }
   }, {
+    id: uuid(),
     name: 'Toadman',
     type: 'monster',
     attributes: {
@@ -121,6 +139,7 @@ var deck = exports.deck = [
       defense: 1300,
     }
   }, {
+    id: uuid(),
     name: 'Metabee',
     type: 'monster',
     attributes: {
@@ -128,6 +147,7 @@ var deck = exports.deck = [
       defense: 1150,
     }
   }, {
+    id: uuid(),
     name: 'Doodle buddy',
     type: 'monster',
     attributes: {
@@ -135,6 +155,7 @@ var deck = exports.deck = [
       defense: 800,
     }
   }, {
+    id: uuid(),
     name: 'Jackie Chan',
     type: 'monster',
     attributes: {
