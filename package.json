@@ -1,10 +1,10 @@
 {
   "name": "battlecards",
   "description": "Battle card game",
-  "version": "0.0.1",
+  "version": "0.0.1-SNAPSHOT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sahat/newedenfaces-react"
+    "url": "https://github.com/joshclowater/battlecards"
   },
   "main": "server.js",
   "scripts": {
@@ -25,7 +25,6 @@
     "compression": "^1.6.0",
     "express": "^4.13.3",
     "history": "^1.13.0",
-    "jquery": "^3.1.1",
     "lodash": "^4.17.4",
     "mongoose": "^4.2.5",
     "morgan": "^1.6.1",
