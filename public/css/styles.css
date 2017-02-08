@@ -1,3 +1,13 @@
+/* Hide vue show attribute used so they don't appear until vue instance is ready */
+[v-show], [v-if], [v-cloak] {
+  display: none;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  font-size: 14px;
+}
+
 .hand {
   white-space: nowrap;
   overflow-x: auto;
