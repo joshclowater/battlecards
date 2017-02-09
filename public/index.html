@@ -1,91 +1,203 @@
 <html>
-  <title>Battlecards</title>
+  <title>Battle Kards</title>
   <head>
+    <meta name="viewport" content="width=device-width,height=device-height,initial-scale=1.0" />
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans" rel="stylesheet">
     <link href="css/styles.css" rel="stylesheet">
   </head>
   <body>
-    <div id="game" style="display: none;">
-      <div id="opponent">
-        <div class="hand"></div>
-        <div class="deck"></div>
-        <div class="shields"></div>
+    <div id="app">
+      <div v-if="gameStatus === undefined">
+        <div class="centerWindow">
+          <span>
+            Connecting to server...
+          </span>
+        </div>
       </div>
-      <hr />
-      <div id="me">
-        <div class="shields"></div>
-        <div class="deck"></div>
-        <div class="hand"></div>
+      <div v-else-if="gameStatus === 'waitingForAnotherPlayer'">
+        <div class="centerWindow">
+          <span>
+            Waiting for another player to join...
+          </span>
+        </div>
+      </div>
+      <div v-else-if="gameStatus === 'playing'">
+        <div id="gameContainer">
+          <div id="details" v-show="windowWidth > windowHeight">
+            <div class="turn">
+              <span>
+                Curent turn: {{ this.myPlayerId === this.playersTurn ? 'Me' : 'Other player' }}
+              </span>
+              <button v-if="myPlayerId === playersTurn" v-on:click="endTurn">
+                End turn
+              </button>
+            </div>
+          </div>
+          <div id="game">
+            <div class="bar">
+              <div class="deck flexEven">
+                <div class="iconContainer">
+                  <img src="images/deck.svg" alt="Deck:" class="icon"/>
+                  <span class="iconTitle">x&nbsp;{{ opponent.deckSize }}</span>
+                </div>
+              </div>
+              <div class="shields">
+                <div class="iconContainer">
+                  <img src="images/shield.svg" alt="Shields:" class="icon"/>
+                  <span class="iconTitle">x&nbsp;{{ opponent.shieldsSize }}</span>
+                </div>
+              </div>
+              <div class="hand flexEven">
+                <div class="iconContainer right">
+                  <img src="images/card.svg" alt="Cards:" class="icon"/>
+                  <span class="iconTitle">x&nbsp;{{ opponent.handSize }}</span>
+                </div>
+              </div>
+            </div>
+            <div id="opponent">
+              <div class="magic scrollX">
+                <div class="scrollXCardContainer">
+                  <div v-for="n in 5" class="card cardPlaceholder"></div>
+                </div>
+              </div>
+              <div class="monsters scrollX">
+                <div class="scrollXCardContainer">
+                  <div v-for="n in 5" class="card cardPlaceholder"></div>
+                </div>
+              </div>
+            </div>
+            <hr />
+            <div id="me">
+              <div class="monsters scrollX">
+                <div class="scrollXCardContainer">
+                  <div v-for="n in 5" class="card cardPlaceholder"></div>
+                </div>
+              </div>
+              <div class="magic scrollX">
+                <div class="scrollXCardContainer">
+                  <div v-for="n in 5" class="card cardPlaceholder"></div>
+                </div>
+              </div>
+              <div class="hand scrollX">
+                <div class="scrollXCardContainer" v-bind:style="{width: myPlayer.hand.length * 12 + 'vh'}">
+                  <div v-for="card in myPlayer.hand" class="card">
+                    <div class="title" v-bind:title="card.name">
+                      <span>
+                        {{ card.name }}
+                      <span>
+                    </div>
+                    <div class="atk">
+                      <span>
+                        Atk: {{ card.attributes.attack }}
+                      </span>
+                    </div>
+                    <div class="def">
+                      <span>
+                        Def: {{ card.attributes.defense }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div id="bottomBar" class="bar">
+              <div class="deck flexEven">
+                <div class="iconContainer">
+                  <img src="images/deck.svg" alt="Deck:" class="icon"/>
+                  <span class="iconTitle">x&nbsp;{{ myPlayer.deckSize }}</span>
+                </div>
+              </div>
+              <div class="shields">
+                <div class="iconContainer">
+                  <img src="images/shield.svg" alt="Shields:" class="icon"/>
+                  <span class="iconTitle">x&nbsp;{{ myPlayer.shieldsSize }}</span>
+                </div>
+              </div>
+              <div class="flexEven">
+
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-else>
+        Invalid game status
       </div>
     </div>
-    <div id="gameStatus"></div>
   </body>
 
+  <script src="https://unpkg.com/vue/dist/vue.js"></script>
   <script src="/socket.io/socket.io.js"></script>
-  <script src="https://code.jquery.com/jquery-3.1.1.min.js"></script>
+
+  <!-- TODO move into own .js file -->
   <script>
-    var myPlayerId;
     var socket = io();
+    var vm = new Vue({
+      el: '#app',
+      data: {
+        windowHeight: undefined,
+        windowWidth: undefined,
+        gameStatus: undefined,
+        myPlayerId: undefined,
+        playersTurn: undefined,
+        opponent: undefined,
+        myPlayer: undefined
+      },
+      // bind event handlers to the `handleResize` method (defined below)
+      beforeDestroy: function () {
+        window.removeEventListener('resize', this.handleResize);
+      },
+      created: function() {
+        window.addEventListener('resize', this.handleResize);
+        this.handleResize();
 
-    socket.on('waitingForAnotherPlayer', function() {
-      console.log('waitingForAnotherPlayer');
-      $('#gameStatus').html('waiting for another player...');
-    });
-    socket.on('gameStarted', function(response) {
-      console.log('gameStarted', response);
-      myPlayerId = response.playerId;
-      $('#game').show();
-      $('#gameStatus').html(
-        'Game started. Curent turn: ' + (response.playersTurn === myPlayerId ? 'Me' : 'Other player')
-      );
-      if (response.playersTurn === myPlayerId) {
-        $('#gameStatus').append('<button onclick="endTurn()">End turn</button>');
-      }
-      $('#opponent .deck').html('Opponent\'s deck: ' + response.opponentsDeckSize);
-      $('#opponent .shields').html('Opponent\'s shields: ' + response.opponentsShieldsSize);
-      $('#opponent .hand').html('Opponent\'s hand: ' + response.opponentsHandSize);
-      $('#me .deck').html('My deck: ' + response.myDeckSize);
-      $('#me .shields').html('My shields: ' + response.myShieldsSize);
-      response.myHand.forEach(function(card) {
-        $('#me .hand').append(
-          '<div class="card">' +
-            '<div class="title" title="' + card.name + '">' + card.name + '</div>' +
-            '<div class="picture"></div>' +
-            '<div class="attributes">' +
-              '<span class="atk">Atk: ' + card.attributes.attack + '</span>' +
-              '<span class="def">Def: ' + card.attributes.defense + '</span>' +
-            '</div>' +
-          '</div>'
-        );
-      });
-    });
-    socket.on('invalidMove', function(message) {
-      console.warn('Invalid move:', message);
-    });
+        socket.on('waitingForAnotherPlayer', function() {
+          console.log('waitingForAnotherPlayer');
+          this.gameStatus = 'waitingForAnotherPlayer';
+        }.bind(this));
 
-    function endTurn() {
-      socket.emit('endTurn');
-    }
-    socket.on('turnEnded', function(response) {
-      console.log('turnEnded', response);
-      $('#gameStatus').html(
-        'Curent turn: ' + (response.playersTurn === myPlayerId ? 'Me' : 'Other player')
-      );
-      if (response.playersTurn === myPlayerId) {
-        $('#gameStatus').append('<button onclick="endTurn()">End turn</button>');
-        var card = response.cardDrawn;
-        $('#me .hand').append(
-          '<div class="card">' +
-            '<div class="title" title="' + card.name + '">' + card.name + '</div>' +
-            '<div class="picture"></div>' +
-            '<div class="attributes">' +
-              '<span class="atk">Atk: ' + card.attributes.attack + '</span>' +
-              '<span class="def">Def: ' + card.attributes.defense + '</span>' +
-            '</div>' +
-          '</div>'
-        );
-        $('#me .deck').html('My deck: ' + response.myDeckSize);
-      } else {
-        $('#opponent .deck').html('Opponent\'s deck: ' + response.opponentsDeckSize);
+        socket.on('gameStarted', function(response) {
+          console.log('gameStarted', response);
+          this.gameStatus = 'playing';
+          this.myPlayerId = response.playerId;
+          this.playersTurn = response.playersTurn;
+          this.opponent = {
+            deckSize: response.opponentsDeckSize,
+            shieldsSize: response.opponentsShieldsSize,
+            handSize: response.opponentsHandSize
+          };
+          this.myPlayer = {
+            deckSize: response.myDeckSize,
+            shieldsSize: response.myShieldsSize,
+            hand: response.myHand
+          };
+        }.bind(this));
+
+        socket.on('turnEnded', function(response) {
+          console.log('turnEnded', response);
+          this.playersTurn = response.playersTurn;
+          if (this.playersTurn === this.myPlayerId) {
+            this.myPlayer.hand.push(response.cardDrawn);
+            this.myPlayer.deckSize = response.myDeckSize;
+          } else {
+            this.opponent.deckSize = response.opponentsDeckSize;
+          }
+        }.bind(this));
+
+        socket.on('invalidMove', function(message) {
+          console.warn('Invalid move:', message);
+        });
+
+      },
+      methods: {
+        handleResize: function() {
+          this.windowHeight = window.innerHeight;
+          this.windowWidth = window.innerWidth;
+        },
+        endTurn: function() {
+          console.log('end my turn');
+          socket.emit('endTurn');
+        }
       }
     });
   </script>

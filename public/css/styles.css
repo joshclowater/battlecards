@@ -1,41 +1,124 @@
 /* Hide vue show attribute used so they don't appear until vue instance is ready */
-[v-show], [v-if], [v-cloak] {
+[v-show], [v-if], [v-else-if], [v-else], [v-cloak] {
   display: none;
 }
 
 body {
-  font-family: 'Roboto', sans-serif;
-  font-size: 14px;
+  background-color: #ecf0f1;
+  color: #292929;
+  font-family: 'Open Sans', sans-serif;
+  margin: 0;
+  font-size: 2vh;
 }
 
-.hand {
+span {
+  cursor: default;
+}
+
+.centerWindow {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+}
+
+#gameContainer {
+  display: flex;
+}
+
+#game {
+  flex: 65;
+  order: 0;
+  position: relative;
+  height: 100vh;
+  overflow-y: hidden;
+}
+
+#details {
+  flex: 35;
+  order: 1;
+  height: 100vh;
+  box-shadow: 0px 0px 2px #757D75;
+}
+
+.bar {
+  display: flex;
+  height: 5vh;
+  width: calc(100% - 1px);
+  position: absolute;
+}
+
+.bar div {
+  padding: .5vh;
+}
+
+.flexEven {
+  flex: 1 1 0;
+}
+
+.right {
+  float: right;
+}
+
+.iconContainer {
+  display: inline-block;
+}
+
+.bar .icon {
+  height: 3vh;
+}
+
+.iconTitle {
+  vertical-align: top;
+}
+
+#opponent {
+  padding-top: 5vh;
+  height: 35vh;
+}
+
+.scrollX {
   white-space: nowrap;
   overflow-x: auto;
+  overflow-y: hidden;
+  height: 18vh;
+  width: calc(100% - 1px);
+}
+
+.scrollXCardContainer {
+  width: 60vh;
+  margin: 0 auto;
 }
 
 .card {
   display: inline-block;
-  border: 1px solid;
+  width: 11vh;
+  height: 16vh;
+  font-size: 1.5vh;
   border-radius: 3px;
-  margin-right: 5px;
-  width: 160px;
+  background-color: #FFFFFF;
+  box-shadow: 0px 1px 4px #757D75;
+  margin: 0 0.5vh;
+}
+
+.cardPlaceholder {
+  box-shadow: inset 0px 1px 3px #757D75;
 }
 
 .card div {
-  padding: 5px;
+  padding: 0.5vh;
+  text-align: center;
 }
 
 .card .title {
   text-overflow: ellipsis;
   overflow: hidden;
-  border-bottom: 1px solid;
 }
 
-.card .picture {
-  height: 100px;
-  border-bottom: 1px solid;
+.card .atk {
+  margin-top: 7vh;
 }
 
-.card .attributes .def {
-  float: right;
+#bottomBar {
+  bottom: 0;
 }
