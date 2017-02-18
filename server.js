@@ -99,7 +99,7 @@ io.sockets.on('connection', function(socket) {
       game.playersTurn = playersTurn;
 
       // Active player draw card
-      var cardDrawn = deckUtils.drawFrom(game.players[game.playersTurn].deck);
+      const cardDrawn = deckUtils.drawFrom(game.players[game.playersTurn].deck);
       game.players[game.playersTurn].hand.push(cardDrawn);
 
       sockets[game.playersTurn].emit('turnEnded', {
@@ -117,8 +117,23 @@ io.sockets.on('connection', function(socket) {
   });
 
   socket.on('disconnect', function() {
-    // TODO kill game when one or more players disconnect, send appropriate responses
-    console.error('Player ' + playerId + ' disconnected');
+    // If only one player waiting
+    if (games.gameWithPlayerWaiting === game.id) {
+      delete sockets[playerId];
+      delete games[game.id];
+      games.gameWithPlayerWaiting = undefined;
+      console.log('killed 1P game. sockets:', Object.keys(sockets).length, 'games:', Object.keys(games).length - 1);
+    } else {
+      const otherPlayerId = Object.keys(game.players).find(function(gamePlayerId) {
+        return gamePlayerId !== playerId;
+      });
+      sockets[otherPlayerId].emit('win', 'Other player left');
+      sockets[otherPlayerId].disconnect(true);
+      delete sockets[otherPlayerId];
+      delete sockets[playerId];
+      delete games[game.id];
+      console.log('killed 2P game. sockets:', Object.keys(sockets).length, 'games:', Object.keys(games).length - 1);
+    }
   });
 });
 

@@ -21,6 +21,15 @@
           </span>
         </div>
       </div>
+      <div v-else-if="gameStatus === 'gameOver'">
+        <div class="centerWindow">
+          <span>
+            <button onclick="window.location.reload();">
+              Play again?
+            </button>
+          </span>
+        </div>
+      </div>
       <div v-else-if="gameStatus === 'playing'">
         <div id="gameContainer">
           <div id="details" v-show="windowWidth > windowHeight">
@@ -182,6 +191,12 @@
           } else {
             this.opponent.deckSize = response.opponentsDeckSize;
           }
+        }.bind(this));
+
+        socket.on('win', function(message) {
+          console.log('win', message);
+          this.gameStatus = 'gameOver';
+          alert('You won! ' + message);
         }.bind(this));
 
         socket.on('invalidMove', function(message) {
