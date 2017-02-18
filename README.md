@@ -1,7 +1,7 @@
-# Battlecards
-Battling card game
+# Battle Kards
+https://battlekards.herokuapp.com
 
-## Setup
+## Local setup
 ```shell
 npm install
 npm start
