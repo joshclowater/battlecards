@@ -1,40 +1,49 @@
-var express = require('express');
-var path = require('path');
-var logger = require('morgan');
-var bodyParser = require('body-parser');
-var _ = require('lodash');
-var uuid = require('uuid/v4');
+const _ = require('lodash');
+const bodyParser = require('body-parser');
+const ejs = require('ejs')
+const express = require('express');
+const logger = require('morgan');
+const path = require('path');
+const uuid = require('uuid/v4');
 
-var deckUtils = require('./src/deck');
+const deckUtils = require('./src/deck');
 
-var app = express();
-app.set('port', process.env.PORT || 3000);
+const app = express();
 app.use(logger('dev'));
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static('public'));
+app.set('port', process.env.PORT || 3000);
+app.set('views', './views');
+app.engine('html', ejs.renderFile);
+app.set('view engine', 'html');
 
-var server = require('http').createServer(app);
-var io = require('socket.io')(server);
+// Create home route
+app.get('/', (req, res) => {
+  return res.render('index');
+});
 
-// Constants
-var numCardsOnGameStart = 5;
-var numShieldsOnGameStart = 3;
+const server = require('http').createServer(app);
+const io = require('socket.io')(server);
 
-// Game/session data
-var games = {
-  // Games will be stored here with uuids as keys
+// Game constants
+const numCardsOnGameStart = 5;
+const numShieldsOnGameStart = 3;
+
+// Games will be stored here with uuids as keys
+const games = {
   gameWithPlayerWaiting: undefined
 };
-var sockets = {};
+// Player's sockets stored here with uuids as keys
+const sockets = {};
 
 io.sockets.on('connection', function(socket) {
-  var game;
-  var playerId = uuid();
+  let game;
+  const playerId = uuid();
   sockets[playerId] = socket;
 
   if (games.gameWithPlayerWaiting === undefined) {
-    var gameId = uuid();
+    const gameId = uuid();
     games.gameWithPlayerWaiting = gameId;
     games[gameId] = {
       id: gameId,
@@ -48,10 +57,10 @@ io.sockets.on('connection', function(socket) {
       hand: [],
       shields: []
     };
-    for (var i = 0; i < numCardsOnGameStart; i++) {
+    for (let i = 0; i < numCardsOnGameStart; i++) {
       game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
     }
-    for (var i = 0; i < numShieldsOnGameStart; i++) {
+    for (let i = 0; i < numShieldsOnGameStart; i++) {
       game.players[playerId].shields.push(deckUtils.drawFrom(game.players[playerId].deck));
     }
 
@@ -67,10 +76,10 @@ io.sockets.on('connection', function(socket) {
       hand: [],
       shields: []
     };
-    for (var i = 0; i < numCardsOnGameStart; i++) {
+    for (let i = 0; i < numCardsOnGameStart; i++) {
       game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
     }
-    for (var i = 0; i < numShieldsOnGameStart; i++) {
+    for (let i = 0; i < numShieldsOnGameStart; i++) {
       game.players[playerId].shields.push(deckUtils.drawFrom(game.players[playerId].deck));
     }
 
@@ -124,6 +133,7 @@ io.sockets.on('connection', function(socket) {
       games.gameWithPlayerWaiting = undefined;
       console.log('killed 1P game. sockets:', Object.keys(sockets).length, 'games:', Object.keys(games).length - 1);
     } else {
+      // TODO don't re-do this when other player disconnects
       const otherPlayerId = Object.keys(game.players).find(function(gamePlayerId) {
         return gamePlayerId !== playerId;
       });
