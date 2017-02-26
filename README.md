@@ -2,8 +2,14 @@
 Two-player battle card game using Vue.js front end framework and Express backend framework.
 https://battlekards.herokuapp.com
 
-## Local setup
+## Development
 ```shell
 npm install
 npm run dev
+```
+
+## Production
+```shell
+npm install
+npm start
 ```

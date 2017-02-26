@@ -16,6 +16,22 @@
     cursor: default;
   }
 
+  button {
+    border-radius: .25rem;
+    border: 1px solid transparent;
+    background-color: #c3d7e8;
+    padding: .5rem 1rem;
+    cursor: pointer;
+  }
+
+  button:hover {
+    background-color: #a9c5dc;
+  }
+
+  button:active {
+    background-color: #8aa8c1;
+  }
+
   .centerWindow {
     display: flex;
     justify-content: center;
@@ -28,7 +44,7 @@
   }
 
   #game {
-    flex: 65;
+    flex: 60;
     order: 0;
     position: relative;
     height: 100vh;
@@ -36,21 +52,41 @@
   }
 
   #details {
-    flex: 35;
+    flex: 40;
     order: 1;
     height: 100vh;
     box-shadow: 0px 0px 2px #757D75;
   }
 
+  #detailsModal {
+    position: absolute;
+    z-index: 2;
+    top: 5vh;
+    left: 5vw;
+    height: 88vh;
+    width: 90vw;
+    background-color: white;
+    box-shadow: 0px 1px 4px #757D75;
+    border-radius: 3px;
+  }
+
+  #modalClose {
+    display: inline-block;
+    position: absolute;
+    right: 2vw;
+    cursor: pointer;
+    font-size: 4vh;
+  }
+
   .bar {
     display: flex;
-    height: 5vh;
+    height: 7vh;
     width: calc(100% - 1px);
     position: absolute;
   }
 
-  .bar div {
-    padding: .5vh;
+  .bar > div {
+    padding: 1vh;
   }
 
   .flexEven {
@@ -66,23 +102,54 @@
   }
 
   .bar .icon {
-    height: 3vh;
+    height: 4.5vh;
+  }
+
+  .bar .unicodeIcon {
+    font-size: 5.5vh;
+    line-height: 4.5vh;
+  }
+
+  .pulse {
+    box-shadow: 0 0 0 0 rgba(140, 140, 140, 0.7);
+    animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
+    border-radius: 100%;
+  }
+
+  .pulse:hover {
+    animation: none;
+  }
+
+  @keyframes pulse {
+    to {
+      box-shadow: 0 0 0 20px rgba(232, 76, 61, 0);
+    }
+  }
+
+  #actionIcon {
+    cursor: pointer;
   }
 
   .iconTitle {
     vertical-align: top;
+    font-size: 2.5vh;
+    line-height: 4.5vh;
   }
 
   #opponent {
-    padding-top: 5vh;
-    height: 35vh;
+    padding-top: 7vh;
+    height: 34vh;
+  }
+
+  hr {
+    margin: 0 0 1vh;
   }
 
   .scrollX {
     white-space: nowrap;
     overflow-x: auto;
     overflow-y: hidden;
-    height: 18vh;
+    height: 17vh;
     width: calc(100% - 1px);
   }
 
@@ -130,7 +197,6 @@
     <div class="centerWindow">
       <span>
         Connecting to server...
-        {{ this.gameStatus }}
       </span>
     </div>
   </div>
@@ -152,15 +218,14 @@
   </div>
   <div v-else-if="gameStatus === 'playing'">
     <div id="gameContainer">
-      <div id="details" v-show="windowWidth > windowHeight">
-        <div class="turn">
-          <span>
-            Curent turn: {{ this.myPlayerId === this.playersTurn ? 'Me' : 'Other player' }}
-          </span>
-          <button v-if="myPlayerId === playersTurn" v-on:click="endTurn">
-            End turn
-          </button>
+      <div id="details" v-if="windowWidth > windowHeight">
+        <Battle-Kards-Details :myPlayerId="myPlayerId" :playersTurn="playersTurn" :socket="socket" ></Battle-Kards-Details>
+      </div>
+      <div id="detailsModal" v-if="windowWidth <= windowHeight" v-show="showModal" >
+        <div id="modalClose" v-on:click="showModal = false">
+          &#10005;
         </div>
+        <Battle-Kards-Details :myPlayerId="myPlayerId" :playersTurn="playersTurn" :socket="socket" ></Battle-Kards-Details>
       </div>
       <div id="game">
         <div class="bar">
@@ -243,24 +308,36 @@
             </div>
           </div>
           <div class="flexEven">
+            <div
+              v-if="windowWidth <= windowHeight"
+              v-on:click="showModal = !showModal"
+              class="iconContainer right"
+              v-bind:class="hasAction"
+            >
+              <span id="actionIcon" class="unicodeIcon">
+                &#9876;
+              </span>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
   <div v-else>
-    Invalid game status
+    Invalid game status {{ this.gameStatus }}
   </div>
 </template>
 
 <script>
-  // import axios from 'axios';
+  import BattleKardsDetails from './battlekards_details.vue';
 
   export default {
     name: 'BattleKards',
     data: () => ({
       windowHeight: undefined,
       windowWidth: undefined,
+      socket: undefined,
+      showModal: false,
       gameStatus: undefined,
       myPlayerId: undefined,
       playersTurn: undefined,
@@ -284,7 +361,6 @@
         this.windowHeight = window.innerHeight;
         this.windowWidth = window.innerWidth;
       },
-
       initGameSocket() {
         this.socket.on('waitingForAnotherPlayer', () => {
           console.log('waitingForAnotherPlayer');
@@ -329,11 +405,16 @@
           console.warn('Invalid move:', message);
         });
       },
-
-      endTurn() {
-        console.log('end my turn');
-        this.socket.emit('endTurn');
+    },
+    computed: {
+      hasAction: function () {
+        return {
+          pulse: this.playersTurn === this.myPlayerId && !this.showModal,
+        };
       },
-    }
+    },
+    components: {
+      BattleKardsDetails,
+    },
   };
 </script>
