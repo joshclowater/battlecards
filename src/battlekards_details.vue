@@ -16,16 +16,29 @@
 
 <template>
   <div id="detailsContainer">
-    <span class="message">
-      {{
-        this.myPlayerId === this.playersTurn
-          ? 'It is currently your turn. Once you are finished, you may end your turn.'
-          : 'It is currently the other players turn.'
-      }}
-    </span>
-    <button v-if="myPlayerId === playersTurn" v-on:click="endTurn">
-      End turn
-    </button>
+    <div v-if="selectedCard !== undefined">
+      <div>
+        {{ selectedCard.name }}
+      </div>
+      <div>
+        {{ selectedCard.attributes.attack }}
+      </div>
+      <div>
+        {{ selectedCard.attributes.defense }}
+      </div>
+    </div>
+    <div v-else >
+      <span class="message">
+        {{
+          this.myPlayerId === this.playersTurn
+            ? 'It is currently your turn. Once you are finished, you may end your turn.'
+            : 'It is currently the other players turn.'
+        }}
+      </span>
+      <button v-if="myPlayerId === playersTurn" v-on:click="endTurn">
+        End turn
+      </button>
+    </div>
   </div>
 </template>
 
@@ -40,9 +53,13 @@
         type: String,
         required: true
       },
+      selectedCard: {
+        type: Object,
+      },
       socket: {
+        type: Object,
         required: true
-      }
+      },
     },
     methods: {
       endTurn() {

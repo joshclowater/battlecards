@@ -219,13 +219,26 @@
   <div v-else-if="gameStatus === 'playing'">
     <div id="gameContainer">
       <div id="details" v-if="windowWidth > windowHeight">
-        <Battle-Kards-Details :myPlayerId="myPlayerId" :playersTurn="playersTurn" :socket="socket" ></Battle-Kards-Details>
-      </div>
-      <div id="detailsModal" v-if="windowWidth <= windowHeight" v-show="showModal" >
-        <div id="modalClose" v-on:click="showModal = false">
+        <div id="modalClose" v-if="selectedCard !== undefined" v-on:click="selectedCard = undefined;">
           &#10005;
         </div>
-        <Battle-Kards-Details :myPlayerId="myPlayerId" :playersTurn="playersTurn" :socket="socket" ></Battle-Kards-Details>
+        <Battle-Kards-Details
+          :myPlayerId="myPlayerId"
+          :playersTurn="playersTurn"
+          :selectedCard="selectedCard"
+          :socket="socket"
+        />
+      </div>
+      <div id="detailsModal" v-if="windowWidth <= windowHeight" v-show="showModal || selectedCard !== undefined" >
+        <div id="modalClose" v-on:click="showModal = false; selectedCard = undefined;">
+          &#10005;
+        </div>
+        <Battle-Kards-Details
+          :myPlayerId="myPlayerId"
+          :playersTurn="playersTurn"
+          :selectedCard="selectedCard"
+          :socket="socket"
+        />
       </div>
       <div id="game">
         <div class="bar">
@@ -274,7 +287,7 @@
           </div>
           <div class="hand scrollX">
             <div class="scrollXCardContainer" v-bind:style="{width: myPlayer.hand.length * 12 + 'vh'}">
-              <div v-for="card in myPlayer.hand" class="card">
+              <div v-for="card in myPlayer.hand" v-on:click="() => selectCard(card)" class="card">
                 <div class="title" v-bind:title="card.name">
                   <span>
                     {{ card.name }}
@@ -310,7 +323,7 @@
           <div class="flexEven">
             <div
               v-if="windowWidth <= windowHeight"
-              v-on:click="showModal = !showModal"
+              v-on:click="showModal = !showModal; selectedCard = undefined;"
               class="iconContainer right"
               v-bind:class="hasAction"
             >
@@ -342,7 +355,8 @@
       myPlayerId: undefined,
       playersTurn: undefined,
       opponent: undefined,
-      myPlayer: undefined
+      myPlayer: undefined,
+      selectedCard: undefined,
     }),
     beforeMount () {
       this.socket = io();
@@ -405,6 +419,9 @@
           console.warn('Invalid move:', message);
         });
       },
+      selectCard(card) {
+        this.selectedCard = card;
+      }
     },
     computed: {
       hasAction: function () {
