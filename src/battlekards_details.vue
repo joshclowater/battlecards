@@ -26,6 +26,9 @@
       <div>
         {{ selectedCard.attributes.defense }}
       </div>
+      <button v-if="myPlayerId === playersTurn && !hasSummoned" v-on:click="summon">
+        Summon Attack
+      </button>
     </div>
     <div v-else >
       <span class="message">
@@ -66,6 +69,11 @@
         console.log('end my turn');
         this.socket.emit('endTurn');
       },
+
+      summon(){
+        this.socket.emit('summon', this.selectedCard.id);
+
+      }
     },
   };
 
