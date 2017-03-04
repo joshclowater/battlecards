@@ -57,24 +57,24 @@
         required: true
       },
       selectedCard: {
-        type: Object,
+        type: Object
       },
       socket: {
         type: Object,
         required: true
-      },
+      }
     },
     methods: {
       endTurn() {
-        console.log('end my turn');
+        console.log('endTurn()');
         this.socket.emit('endTurn');
       },
 
-      summon(){
+      summon() {
+        console.log('summon()', this.selectedCard.id);
         this.socket.emit('summon', this.selectedCard.id);
-
       }
-    },
+    }
   };
 
 </script>

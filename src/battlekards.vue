@@ -377,6 +377,7 @@
 
 <script>
   import { cloneDeep } from 'lodash';
+  import io from 'socket.io-client';
   import BattleKardsDetails from './battlekards_details.vue';
 
   export default {
@@ -391,12 +392,12 @@
       playersTurn: undefined,
       opponent: undefined,
       myPlayer: undefined,
-      selectedCard: undefined,
+      selectedCard: undefined
     }),
-    beforeMount () {
+    beforeMount() {
       this.socket = io();
       this.initGameSocket();
-      console.log('Game socket initiated')
+      console.log('Game socket initiated');
     },
     mounted() {
       window.addEventListener('resize', this.handleResize);
@@ -425,14 +426,13 @@
             deckSize: response.opponentsDeckSize,
             shieldsSize: response.opponentsShieldsSize,
             handSize: response.opponentsHandSize,
-            monsters: [],
+            monsters: []
           };
           this.myPlayer = {
             deckSize: response.myDeckSize,
             shieldsSize: response.myShieldsSize,
             hand: response.myHand,
-            monsters: [],
-
+            monsters: []
           };
         });
 
@@ -450,15 +450,14 @@
         this.socket.on('summoned', (card) => {
           console.log('Summoned: ', card);
 
-          const monsterIndex = this.myPlayer.hand.findIndex(function(cardInHand) { // find card index
-            return cardInHand.id === card.id;
-          });
+          const monsterIndex = this.myPlayer.hand.findIndex(cardInHand =>
+            cardInHand.id === card.id
+          );
 
           const monster = cloneDeep(this.myPlayer.hand[monsterIndex]);
 
           this.myPlayer.hand.splice(monsterIndex, 1);
           this.myPlayer.monsters.push(monster);
-
         });
 
         this.socket.on('opponentSummoned', (response) => {
@@ -470,7 +469,7 @@
         this.socket.on('win', (message) => {
           console.log('win', message);
           this.gameStatus = 'gameOver';
-          alert('You won! ' + message);
+          alert(`You won! ${message}`);
         });
 
         this.socket.on('invalidMove', (message) => {
@@ -482,14 +481,14 @@
       }
     },
     computed: {
-      hasAction: function () {
+      hasAction() {
         return {
-          pulse: this.playersTurn === this.myPlayerId && !this.showModal,
+          pulse: this.playersTurn === this.myPlayerId && !this.showModal
         };
-      },
+      }
     },
     components: {
-      BattleKardsDetails,
-    },
+      BattleKardsDetails
+    }
   };
 </script>
