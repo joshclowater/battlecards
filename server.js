@@ -1,9 +1,8 @@
 const _ = require('lodash');
 const bodyParser = require('body-parser');
-const ejs = require('ejs')
+const ejs = require('ejs');
 const express = require('express');
 const logger = require('morgan');
-const path = require('path');
 const uuid = require('uuid/v4');
 
 const deckUtils = require('./src/deck');
@@ -19,9 +18,9 @@ app.engine('html', ejs.renderFile);
 app.set('view engine', 'html');
 
 // Create home route
-app.get('/', (req, res) => {
-  return res.render('index');
-});
+app.get('/', (req, res) =>
+  res.render('index')
+);
 
 const server = require('http').createServer(app);
 const io = require('socket.io')(server);
@@ -37,7 +36,7 @@ const games = {
 // Player's sockets stored here with uuids as keys
 const sockets = {};
 
-io.sockets.on('connection', function(socket) {
+io.sockets.on('connection', (socket) => {
   let game;
   const playerId = uuid();
   sockets[playerId] = socket;
@@ -49,7 +48,6 @@ io.sockets.on('connection', function(socket) {
       id: gameId,
       gameStarted: false,
       players: {}
-
     };
     game = games[gameId];
     game.players[playerId] = {
@@ -57,18 +55,18 @@ io.sockets.on('connection', function(socket) {
       deck: _.cloneDeep(deckUtils.deck),
       hand: [],
       shields: [],
-      monsters:[],
-      hasSummoned: false //To prevent summoner from summoning more than once
+      monsters: [],
+      hasSummoned: false
 
     };
-    for (let i = 0; i < numCardsOnGameStart; i++) {
+    for (let i = 0; i < numCardsOnGameStart; i += 1) {
       game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
     }
-    for (let i = 0; i < numShieldsOnGameStart; i++) {
+    for (let i = 0; i < numShieldsOnGameStart; i += 1) {
       game.players[playerId].shields.push(deckUtils.drawFrom(game.players[playerId].deck));
     }
 
-    console.log('First player (' + playerId + ') joined game ' + game.id);
+    console.log('First player (', playerId, ') joined game ', game.id);
 
     socket.emit('waitingForAnotherPlayer');
   } else {
@@ -79,40 +77,40 @@ io.sockets.on('connection', function(socket) {
       deck: _.cloneDeep(deckUtils.deck),
       hand: [],
       shields: [],
-      monsters:[],
-      hasSummoned: false,
+      monsters: [],
+      hasSummoned: false
     };
-    for (let i = 0; i < numCardsOnGameStart; i++) {
+    for (let i = 0; i < numCardsOnGameStart; i += 1) {
       game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
     }
-    for (let i = 0; i < numShieldsOnGameStart; i++) {
+    for (let i = 0; i < numShieldsOnGameStart; i += 1) {
       game.players[playerId].shields.push(deckUtils.drawFrom(game.players[playerId].deck));
     }
 
     // Randomly set who goes first
     if (Math.random() > 0.5) {
       game.playersTurn = Object.keys(game.players)[0];
-      game.inactivePlayer =  Object.keys(game.players)[1];
+      game.inactivePlayer = Object.keys(game.players)[1];
     } else {
-      game.playersTurn =  Object.keys(game.players)[1];
-      game.inactivePlayer =  Object.keys(game.players)[0];
+      game.playersTurn = Object.keys(game.players)[1];
+      game.inactivePlayer = Object.keys(game.players)[0];
     }
     game.gameStarted = true;
 
-    console.log('Second player (' + playerId + ') joined game ' + game.id);
+    console.log('Second player (', playerId, ') joined game ', game.id);
 
     sockets[game.playersTurn].emit('gameStarted', createGameToSend(game, game.playersTurn, game.inactivePlayer));
     sockets[game.inactivePlayer].emit('gameStarted', createGameToSend(game, game.inactivePlayer, game.playersTurn));
   }
 
-  socket.on('endTurn', function() {
+  socket.on('endTurn', () => {
     console.log('Turn ended by', playerId);
     if (game.gameStarted && game.playersTurn === playerId) {
       // Switch whose turn it is
       const playersTurn = game.inactivePlayer;
       game.inactivePlayer = game.playersTurn;
       game.playersTurn = playersTurn;
-      game.players[game.playersTurn].hasSummoned=false;
+      game.players[game.playersTurn].hasSummoned = false;
       // Active player draw card
       const cardDrawn = deckUtils.drawFrom(game.players[game.playersTurn].deck);
       game.players[game.playersTurn].hand.push(cardDrawn);
@@ -132,33 +130,28 @@ io.sockets.on('connection', function(socket) {
     }
   });
 
-    //Function for Summon button, for player summoning
-  socket.on('summon', function(cardId) {
+  socket.on('summon', (cardId) => {
+    if (game.gameStarted && game.playersTurn === playerId && !game.players[playerId].hasSummoned) {
+      game.players[playerId].hasSummoned = true; // player cannot summon again
 
-    if (game.gameStarted && game.playersTurn === playerId && !game.players[playerId].hasSummoned){ // prevents multiple summoning
+      const monsterIndex = game.players[game.playersTurn].hand.findIndex(cardInHand =>
+        cardInHand.id === cardId
+      );
 
-      game.players[playerId].hasSummoned = true; //player cannot summon again
-
-      var monsterIndex = game.players[game.playersTurn].hand.findIndex(function(cardInHand) { // find card index
-        return cardInHand.id === cardId;
-      });
-
-      var monster = _.cloneDeep(game.players[game.playersTurn].hand[monsterIndex]);
+      const monster = _.cloneDeep(game.players[game.playersTurn].hand[monsterIndex]);
 
       game.players[game.playersTurn].hand.splice(monsterIndex, 1); // remove monster from hand
 
       game.players[game.playersTurn].monsters.push(monster);// add monster
 
-      // pass cloned info?? of monster
       socket.emit('summoned', monster);
       sockets[game.inactivePlayer].emit('opponentSummoned', {
         monster,
         opponentsHandSize: game.players[game.playersTurn].hand.length
-      }); //Show monster on opponents UI
-
+      });
     }
   });
-  socket.on('disconnect', function() {
+  socket.on('disconnect', () => {
     // If only one player waiting
     if (games.gameWithPlayerWaiting === game.id) {
       delete sockets[playerId];
@@ -167,9 +160,9 @@ io.sockets.on('connection', function(socket) {
       console.log('killed 1P game. sockets:', Object.keys(sockets).length, 'games:', Object.keys(games).length - 1);
     } else {
       // TODO don't re-do this when other player disconnects
-      const otherPlayerId = Object.keys(game.players).find(function(gamePlayerId) {
-        return gamePlayerId !== playerId;
-      });
+      const otherPlayerId = Object.keys(game.players).find(gamePlayerId =>
+        gamePlayerId !== playerId
+      );
       sockets[otherPlayerId].emit('win', 'Other player left');
       sockets[otherPlayerId].disconnect(true);
       delete sockets[otherPlayerId];
@@ -193,6 +186,6 @@ function createGameToSend(game, me, otherPlayer) {
   };
 }
 
-server.listen(app.get('port'), function() {
-  console.log('Express server listening on port ' + app.get('port'));
+server.listen(app.get('port'), () => {
+  console.log('Express server listening on port:', app.get('port'));
 });
