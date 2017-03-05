@@ -8,37 +8,51 @@
     padding: 2vh;
   }
 
+  .cardDetailsText {
+    display: block;
+    text-align: center;
+  }
+
   .message {
     display: block;
     text-align: center;
+  }
+
+  button {
+    display: block;
+    margin: 2vh auto 0;
   }
 </style>
 
 <template>
   <div id="detailsContainer">
     <div v-if="selectedCard !== undefined">
-      <div>
+      <span class="cardDetailsText">
         {{ selectedCard.name }}
-      </div>
-      <div>
-        {{ selectedCard.attributes.attack }}
-      </div>
-      <div>
-        {{ selectedCard.attributes.defense }}
-      </div>
-      <button v-if="myPlayerId === playersTurn && !hasSummoned" v-on:click="summon">
+      </span>
+      <span class="cardDetailsText">
+        Atk: {{ selectedCard.attributes.attack }}
+      </span>
+      <span class="cardDetailsText">
+        Def: {{ selectedCard.attributes.defense }}
+      </span>
+      <button id="summonButton" v-if="myPlayerId === playersTurn && !hasSummoned" v-on:click="summon">
         Summon Attack
       </button>
     </div>
     <div v-else >
       <span class="message">
-        {{
-          this.myPlayerId === this.playersTurn
-            ? 'It is currently your turn. Once you are finished, you may end your turn.'
-            : 'It is currently the other players turn.'
-        }}
+        <span v-if="myPlayerId === playersTurn && !hasSummoned">
+          It is currently your turn. You may summon a monster. Once you are finished, you may end your turn.
+        </span>
+        <span v-else-if="myPlayerId === playersTurn">
+          You have summoned a monster. You may end your turn.
+        </span>
+        <span v-else>
+          It is currently the other players turn.
+        </span>
       </span>
-      <button v-if="myPlayerId === playersTurn" v-on:click="endTurn">
+      <button id="endTurnButton" v-if="myPlayerId === playersTurn" v-on:click="endTurn" v-bind:class="endTurnButtonClass()">
         End turn
       </button>
     </div>
@@ -59,6 +73,10 @@
       selectedCard: {
         type: Object
       },
+      hasSummoned: {
+        type: Boolean,
+        required: true
+      },
       socket: {
         type: Object,
         required: true
@@ -73,6 +91,10 @@
       summon() {
         console.log('summon()', this.selectedCard.id);
         this.socket.emit('summon', this.selectedCard.id);
+      },
+
+      endTurnButtonClass() {
+        return this.myPlayerId === this.playersTurn && this.hasSummoned ? 'pulse' : '';
       }
     }
   };

@@ -122,8 +122,8 @@ io.sockets.on('connection', (socket) => {
       });
       sockets[game.inactivePlayer].emit('turnEnded', {
         playersTurn: game.playersTurn,
-        opponentsDeckSize: game.players[game.playersTurn].deck.length,
-        myhandSize: game.players[game.playersTurn].hand.length
+        opponentsHandSize: game.players[game.playersTurn].hand.length,
+        opponentsDeckSize: game.players[game.playersTurn].deck.length
       });
     } else {
       socket.emit('invalidMove', 'Not your turn');
