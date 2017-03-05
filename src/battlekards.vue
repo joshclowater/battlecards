@@ -113,7 +113,6 @@
   .pulse {
     box-shadow: 0 0 0 0 rgba(140, 140, 140, 0.7);
     animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
-    border-radius: 100%;
   }
 
   .pulse:hover {
@@ -126,8 +125,28 @@
     }
   }
 
+  .cardPulse {
+    animation: cardPulse 1.25s infinite ease-in-out;
+  }
+
+  @keyframes cardPulse {
+    0% {
+      box-shadow: 0 0 0 0.1vh rgba(140, 140, 140, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 0.25vh rgba(140, 140, 140, 0.7);
+    }
+    100% {
+      box-shadow: 0 0 0 0.1vh rgba(140, 140, 140, 0.7);
+    }
+  }
+
   #actionIcon {
     cursor: pointer;
+  }
+
+  .circle {
+    border-radius: 100%;
   }
 
   .iconTitle {
@@ -142,7 +161,7 @@
   }
 
   hr {
-    margin: 0 0 1vh;
+    margin: 0.5vh 0;
   }
 
   .scrollX {
@@ -166,7 +185,12 @@
     border-radius: 3px;
     background-color: #FFFFFF;
     box-shadow: 0px 1px 4px #757D75;
-    margin: 0 0.5vh;
+    margin: 0.25vh 0.5vh 0;
+    vertical-align: top;
+  }
+
+  .card.selected {
+    box-shadow: 0px 0px 0.5vh #006eff;
   }
 
   .cardPlaceholder {
@@ -226,6 +250,7 @@
           :myPlayerId="myPlayerId"
           :playersTurn="playersTurn"
           :selectedCard="selectedCard"
+          :hasSummoned="myPlayer.hasSummoned"
           :socket="socket"
         />
       </div>
@@ -237,6 +262,7 @@
           :myPlayerId="myPlayerId"
           :playersTurn="playersTurn"
           :selectedCard="selectedCard"
+          :hasSummoned="myPlayer.hasSummoned"
           :socket="socket"
         />
       </div>
@@ -321,7 +347,7 @@
           </div>
           <div class="hand scrollX">
             <div class="scrollXCardContainer" v-bind:style="{width: myPlayer.hand.length * 12 + 'vh'}">
-              <div v-for="card in myPlayer.hand" v-on:click="() => selectCard(card)" class="card">
+              <div v-for="card in myPlayer.hand" v-on:click="() => selectCard(card)" class="card" v-bind:class="monsterCardClass">
                 <div class="title" v-bind:title="card.name">
                   <span>
                     {{ card.name }}
@@ -358,7 +384,7 @@
             <div
               v-if="windowWidth <= windowHeight"
               v-on:click="showModal = !showModal; selectedCard = undefined;"
-              class="iconContainer right"
+              class="iconContainer right circle"
               v-bind:class="hasAction"
             >
               <span id="actionIcon" class="unicodeIcon">
@@ -432,7 +458,8 @@
             deckSize: response.myDeckSize,
             shieldsSize: response.myShieldsSize,
             hand: response.myHand,
-            monsters: []
+            monsters: [],
+            hasSummoned: false
           };
         });
 
@@ -442,7 +469,9 @@
           if (this.playersTurn === this.myPlayerId) {
             this.myPlayer.hand.push(response.cardDrawn);
             this.myPlayer.deckSize = response.myDeckSize;
+            this.myPlayer.hasSummoned = false;
           } else {
+            this.opponent.handSize = response.opponentsHandSize;
             this.opponent.deckSize = response.opponentsDeckSize;
           }
         });
@@ -458,6 +487,9 @@
 
           this.myPlayer.hand.splice(monsterIndex, 1);
           this.myPlayer.monsters.push(monster);
+          this.myPlayer.hasSummoned = true;
+
+          this.selectedCard = undefined;
         });
 
         this.socket.on('opponentSummoned', (response) => {
@@ -469,6 +501,8 @@
         this.socket.on('win', (message) => {
           console.log('win', message);
           this.gameStatus = 'gameOver';
+
+          // TODO Use modal instaed of alert
           alert(`You won! ${message}`);
         });
 
@@ -483,8 +517,19 @@
     computed: {
       hasAction() {
         return {
-          pulse: this.playersTurn === this.myPlayerId && !this.showModal
+          pulse: this.playersTurn === this.myPlayerId &&
+              !this.showModal &&
+              this.myPlayer.hasSummoned
         };
+      },
+      monsterCardClass() {
+        const result = [];
+        if (this.playersTurn === this.myPlayerId &&
+            this.selectedCard === undefined &&
+            !this.myPlayer.hasSummoned) {
+          result.push('cardPulse');
+        }
+        return result;
       }
     },
     components: {
