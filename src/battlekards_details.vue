@@ -28,16 +28,27 @@
   <div id="detailsContainer">
     <div v-if="selectedCard !== undefined">
       <span class="cardDetailsText">
-        {{ selectedCard.name }}
+        {{ selectedCard.card.name }}
       </span>
       <span class="cardDetailsText">
-        Atk: {{ selectedCard.attributes.attack }}
+        Atk: {{ selectedCard.card.attributes.attack }}
       </span>
       <span class="cardDetailsText">
-        Def: {{ selectedCard.attributes.defense }}
+        Def: {{ selectedCard.card.attributes.defense }}
       </span>
-      <button id="summonButton" v-if="myPlayerId === playersTurn && !hasSummoned" v-on:click="summon">
-        Summon Attack
+      <button
+        v-if="myPlayerId === playersTurn && selectedCard.cardField === 'myHand' && !hasSummoned"
+        id="summonButton"
+        v-on:click="summon"
+      >
+        Summon Attak
+      </button>
+      <button
+        v-else-if="myPlayerId === playersTurn && selectedCard.cardField === 'myMonster' && selectedCard.card.canAttack"
+        id="attackButton"
+        v-on:click="attack"
+      >
+        Attak
       </button>
     </div>
     <div v-else >
@@ -89,8 +100,13 @@
       },
 
       summon() {
-        console.log('summon()', this.selectedCard.id);
-        this.socket.emit('summon', this.selectedCard.id);
+        console.log('summon()', this.selectedCard.card.id);
+        this.socket.emit('summon', this.selectedCard.card.id);
+      },
+
+      attack() {
+        console.log('attack', this.selectedCard.card.id);
+        this.socket.emit('attack', this.selectedCard.card.id);
       },
 
       endTurnButtonClass() {
