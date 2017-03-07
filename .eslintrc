@@ -13,6 +13,7 @@
   },
   "rules": {
     "comma-dangle": ["error", "never"],
+    "max-len": 0,
     "no-console": 0,
     "no-use-before-define": 0,
   }

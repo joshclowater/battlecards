@@ -189,6 +189,10 @@
     vertical-align: top;
   }
 
+  .pointer {
+    cursor: pointer;
+  }
+
   .card.selected {
     box-shadow: 0px 0px 0.5vh #006eff;
   }
@@ -320,7 +324,7 @@
         <div id="me">
           <div class="monsters scrollX">
             <div class="scrollXCardContainer">
-              <div v-for="card in myPlayer.monsters" class="card">
+              <div v-for="card in myPlayer.monsters" v-on:click="() => selectCard(card, 'myMonster')" class="card pointer">
                 <div class="title" v-bind:title="card.name">
                   <span>
                     {{ card.name }}
@@ -347,7 +351,7 @@
           </div>
           <div class="hand scrollX">
             <div class="scrollXCardContainer" v-bind:style="{width: myPlayer.hand.length * 12 + 'vh'}">
-              <div v-for="card in myPlayer.hand" v-on:click="() => selectCard(card)" class="card" v-bind:class="monsterCardClass">
+              <div v-for="card in myPlayer.hand" v-on:click="() => selectCard(card, 'myHand')" class="card pointer" v-bind:class="monsterCardClass">
                 <div class="title" v-bind:title="card.name">
                   <span>
                     {{ card.name }}
@@ -402,7 +406,6 @@
 </template>
 
 <script>
-  import { cloneDeep } from 'lodash';
   import io from 'socket.io-client';
   import BattleKardsDetails from './battlekards_details.vue';
 
@@ -470,6 +473,9 @@
             this.myPlayer.hand.push(response.cardDrawn);
             this.myPlayer.deckSize = response.myDeckSize;
             this.myPlayer.hasSummoned = false;
+            this.myPlayer.monsters = this.myPlayer.monsters.map(monster =>
+              Object.assign(monster, { canAttack: true })
+            );
           } else {
             this.opponent.handSize = response.opponentsHandSize;
             this.opponent.deckSize = response.opponentsDeckSize;
@@ -482,11 +488,8 @@
           const monsterIndex = this.myPlayer.hand.findIndex(cardInHand =>
             cardInHand.id === card.id
           );
-
-          const monster = cloneDeep(this.myPlayer.hand[monsterIndex]);
-
           this.myPlayer.hand.splice(monsterIndex, 1);
-          this.myPlayer.monsters.push(monster);
+          this.myPlayer.monsters.push(card);
           this.myPlayer.hasSummoned = true;
 
           this.selectedCard = undefined;
@@ -496,6 +499,18 @@
           console.log('Opponent summoned: ', response);
           this.opponent.monsters.push(response.monster);
           this.opponent.handSize = response.opponentsHandSize;
+        });
+
+        this.socket.on('attacked', (monster) => {
+          console.log('attacked', monster);
+          const myMonster = this.myPlayer.monsters.find(cardInHand =>
+            cardInHand.id === monster.id
+          );
+          myMonster.canAttack = false;
+        });
+
+        this.socket.on('opponentAttacked', (monster) => {
+          console.log('opponentAttacked', monster);
         });
 
         this.socket.on('win', (message) => {
@@ -510,8 +525,8 @@
           console.warn('Invalid move:', message);
         });
       },
-      selectCard(card) {
-        this.selectedCard = card;
+      selectCard(card, cardField) {
+        this.selectedCard = { card, cardField };
       }
     },
     computed: {

@@ -110,6 +110,11 @@ io.sockets.on('connection', (socket) => {
       const playersTurn = game.inactivePlayer;
       game.inactivePlayer = game.playersTurn;
       game.playersTurn = playersTurn;
+      // Set status of attack monsters
+      game.players[game.playersTurn].monsters = game.players[game.playersTurn].monsters.map(monster =>
+        Object.assign(monster, { canAttack: true })
+      );
+      // Allow for summon
       game.players[game.playersTurn].hasSummoned = false;
       // Active player draw card
       const cardDrawn = deckUtils.drawFrom(game.players[game.playersTurn].deck);
@@ -132,25 +137,48 @@ io.sockets.on('connection', (socket) => {
 
   socket.on('summon', (cardId) => {
     if (game.gameStarted && game.playersTurn === playerId && !game.players[playerId].hasSummoned) {
-      game.players[playerId].hasSummoned = true; // player cannot summon again
-
       const monsterIndex = game.players[game.playersTurn].hand.findIndex(cardInHand =>
         cardInHand.id === cardId
       );
+      if (monsterIndex !== -1) {
+        const monster = _.cloneDeep(game.players[game.playersTurn].hand[monsterIndex]);
+        monster.canAttack = false;
 
-      const monster = _.cloneDeep(game.players[game.playersTurn].hand[monsterIndex]);
+        game.players[playerId].hasSummoned = true; // Player cannot summon again
+        game.players[game.playersTurn].hand.splice(monsterIndex, 1);
+        game.players[game.playersTurn].monsters.push(monster);
 
-      game.players[game.playersTurn].hand.splice(monsterIndex, 1); // remove monster from hand
-
-      game.players[game.playersTurn].monsters.push(monster);// add monster
-
-      socket.emit('summoned', monster);
-      sockets[game.inactivePlayer].emit('opponentSummoned', {
-        monster,
-        opponentsHandSize: game.players[game.playersTurn].hand.length
-      });
+        socket.emit('summoned', monster);
+        sockets[game.inactivePlayer].emit('opponentSummoned', {
+          monster,
+          opponentsHandSize: game.players[game.playersTurn].hand.length
+        });
+      } else {
+        socket.emit('invalidMove', 'card not in hand');
+      }
+    } else {
+      socket.emit('invalidMove', 'not your turn, or you already summoned');
     }
   });
+
+  socket.on('attack', (cardId) => {
+    if (game.gameStarted && game.playersTurn === playerId) {
+      const monsterIndex = game.players[game.playersTurn].monsters.findIndex(cardInHand =>
+        cardInHand.id === cardId
+      );
+      const monster = _.cloneDeep(game.players[game.playersTurn].monsters[monsterIndex]);
+      if (monsterIndex !== -1 && monster.canAttack) {
+        monster.canAttack = false;
+        socket.emit('attacked', monster);
+        sockets[game.inactivePlayer].emit('opponentAttacked', monster);
+      } else {
+        socket.emit('invalidMove', 'card cannot attack');
+      }
+    } else {
+      socket.emit('invalidMove', 'not your turn');
+    }
+  });
+
   socket.on('disconnect', () => {
     // If only one player waiting
     if (games.gameWithPlayerWaiting === game.id) {
