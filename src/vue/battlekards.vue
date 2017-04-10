@@ -238,7 +238,7 @@
   <div v-else-if="gameStatus === 'gameOver'">
     <div class="centerWindow">
       <span>
-        <button onclick="window.location.reload();">
+        <button onclick="window.location.reload(true);">
           Play again?
         </button>
       </span>
@@ -255,6 +255,7 @@
           :playersTurn="playersTurn"
           :selectedCard="selectedCard"
           :hasSummoned="myPlayer.hasSummoned"
+          :opponentsShieldsSize="opponent.shieldsSize"
           :socket="socket"
         />
       </div>
@@ -267,6 +268,7 @@
           :playersTurn="playersTurn"
           :selectedCard="selectedCard"
           :hasSummoned="myPlayer.hasSummoned"
+          :opponentsShieldsSize="opponent.shieldsSize"
           :socket="socket"
         />
       </div>
@@ -501,24 +503,43 @@
           this.opponent.handSize = response.opponentsHandSize;
         });
 
-        this.socket.on('attacked', (monster) => {
-          console.log('attacked', monster);
+        this.socket.on('attacked', (monster, target) => {
+          console.log('attacked', monster, target);
           const myMonster = this.myPlayer.monsters.find(cardInHand =>
             cardInHand.id === monster.id
           );
           myMonster.canAttack = false;
+          if (target === 'shield') {
+            this.opponent.shieldsSize -= 1;
+          } else {
+            console.error('invalid target');
+          }
         });
 
-        this.socket.on('opponentAttacked', (monster) => {
-          console.log('opponentAttacked', monster);
+        this.socket.on('opponentAttacked', (monster, target, shield) => {
+          console.log('opponentAttacked', monster, target, shield);
+          if (target === 'shield') {
+            this.myPlayer.shieldsSize -= 1;
+            this.myPlayer.hand.push(shield);
+          } else {
+            console.error('invalid target');
+          }
         });
 
         this.socket.on('win', (message) => {
           console.log('win', message);
           this.gameStatus = 'gameOver';
 
-          // TODO Use modal instaed of alert
+          // TODO Use modal instead of alert
           alert(`You won! ${message}`);
+        });
+
+        this.socket.on('lose', (message) => {
+          console.log('lose', message);
+          this.gameStatus = 'gameOver';
+
+          // TODO Use modal instead of alert
+          alert(`You lost! ${message}`);
         });
 
         this.socket.on('invalidMove', (message) => {
