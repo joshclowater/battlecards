@@ -43,13 +43,22 @@
       >
         Summon Attak
       </button>
-      <button
-        v-else-if="myPlayerId === playersTurn && selectedCard.cardField === 'myMonster' && selectedCard.card.canAttack"
-        id="attackButton"
-        v-on:click="attack"
-      >
-        Attak
-      </button>
+      <div v-else-if="myPlayerId === playersTurn && selectedCard.cardField === 'myMonster' && selectedCard.card.canAttack">
+        <button
+          v-if="opponentsShieldsSize > 0"
+          id="attackShieldButton"
+          v-on:click="attackShield"
+        >
+          Attak Shield
+        </button>
+        <button
+          v-else
+          id="attackOpponentButton"
+          v-on:click="attackOpponent"
+        >
+          Attak Opponent
+        </button>
+      </div>
     </div>
     <div v-else >
       <span class="message">
@@ -88,6 +97,10 @@
         type: Boolean,
         required: true
       },
+      opponentsShieldsSize: {
+        type: Number,
+        required: true
+      },
       socket: {
         type: Object,
         required: true
@@ -104,9 +117,14 @@
         this.socket.emit('summon', this.selectedCard.card.id);
       },
 
-      attack() {
-        console.log('attack', this.selectedCard.card.id);
-        this.socket.emit('attack', this.selectedCard.card.id);
+      attackShield() {
+        console.log('attack', this.selectedCard.card.id, 'shield');
+        this.socket.emit('attack', this.selectedCard.card.id, 'shield');
+      },
+
+      attackOpponent() {
+        console.log('attack', this.selectedCard.card.id, 'player');
+        this.socket.emit('attack', this.selectedCard.card.id, 'player');
       },
 
       endTurnButtonClass() {

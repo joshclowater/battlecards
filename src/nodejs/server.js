@@ -5,7 +5,7 @@ const express = require('express');
 const logger = require('morgan');
 const uuid = require('uuid/v4');
 
-const deckUtils = require('./src/deck');
+const deckUtils = require('./deck');
 
 const app = express();
 app.use(logger('dev'));
@@ -13,7 +13,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(express.static('public'));
 app.set('port', process.env.PORT || 3000);
-app.set('views', './views');
+app.set('views', 'public/views');
 app.engine('html', ejs.renderFile);
 app.set('view engine', 'html');
 
@@ -57,7 +57,6 @@ io.sockets.on('connection', (socket) => {
       shields: [],
       monsters: [],
       hasSummoned: false
-
     };
     for (let i = 0; i < numCardsOnGameStart; i += 1) {
       game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
@@ -156,29 +155,53 @@ io.sockets.on('connection', (socket) => {
       } else {
         socket.emit('invalidMove', 'card not in hand');
       }
+    } else if (!(game.gameStarted && game.playersTurn === playerId)) {
+      socket.emit('invalidMove', 'not your turn');
     } else {
-      socket.emit('invalidMove', 'not your turn, or you already summoned');
+      socket.emit('invalidMove', 'you already summoned');
     }
   });
 
-  socket.on('attack', (cardId) => {
+  socket.on('attack', (cardId, target) => {
     if (game.gameStarted && game.playersTurn === playerId) {
       const monsterIndex = game.players[game.playersTurn].monsters.findIndex(cardInHand =>
         cardInHand.id === cardId
       );
-      const monster = _.cloneDeep(game.players[game.playersTurn].monsters[monsterIndex]);
-      if (monsterIndex !== -1 && monster.canAttack) {
-        monster.canAttack = false;
-        socket.emit('attacked', monster);
-        sockets[game.inactivePlayer].emit('opponentAttacked', monster);
+      if (monsterIndex !== -1) {
+        const monster = game.players[game.playersTurn].monsters[monsterIndex];
+        if (monster.canAttack) {
+          if (target === 'shield' && game.players[game.inactivePlayer].shields.length > 0) {
+            // Move shield into hand
+            const shield = deckUtils.drawFrom(game.players[game.inactivePlayer].shields);
+            game.players[game.inactivePlayer].hand.push(shield);
+            monster.canAttack = false;
+            socket.emit('attacked', monster, target);
+            sockets[game.inactivePlayer].emit('opponentAttacked', monster, target, shield);
+          } else if (target === 'player' && game.players[game.inactivePlayer].shields.length === 0) {
+            // End game
+            games[game.id].gameOver = true;
+            socket.emit('win', 'Destroyed opponent');
+            sockets[game.inactivePlayer].emit('lose', 'You were detroyed');
+            socket.disconnect(true);
+            delete sockets[playerId];
+            sockets[game.inactivePlayer].disconnect(true);
+            delete sockets[game.inactivePlayer];
+            delete games[game.id];
+          } else {
+            socket.emit('invalidMove', 'invalid target');
+          }
+        } else {
+          socket.emit('invalidMove', 'monster cannot attack');
+        }
       } else {
-        socket.emit('invalidMove', 'card cannot attack');
+        socket.emit('invalidMove', 'no monster with that id');
       }
     } else {
       socket.emit('invalidMove', 'not your turn');
     }
   });
 
+  // On player disconnect, other player wins
   socket.on('disconnect', () => {
     // If only one player waiting
     if (games.gameWithPlayerWaiting === game.id) {
@@ -186,12 +209,12 @@ io.sockets.on('connection', (socket) => {
       delete games[game.id];
       games.gameWithPlayerWaiting = undefined;
       console.log('killed 1P game. sockets:', Object.keys(sockets).length, 'games:', Object.keys(games).length - 1);
-    } else {
-      // TODO don't re-do this when other player disconnects
+    } else if (games[game.id] && games[game.id].gameOver !== true) {
       const otherPlayerId = Object.keys(game.players).find(gamePlayerId =>
         gamePlayerId !== playerId
       );
       sockets[otherPlayerId].emit('win', 'Other player left');
+      games[game.id].gameOver = true;
       sockets[otherPlayerId].disconnect(true);
       delete sockets[otherPlayerId];
       delete sockets[playerId];
