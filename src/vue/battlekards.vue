@@ -113,7 +113,6 @@
   .pulse {
     box-shadow: 0 0 0 0 rgba(140, 140, 140, 0.7);
     animation: pulse 1.25s infinite cubic-bezier(0.66, 0, 0, 1);
-    border-radius: 100%;
   }
 
   .pulse:hover {
@@ -126,8 +125,28 @@
     }
   }
 
+  .cardPulse {
+    animation: cardPulse 1.25s infinite ease-in-out;
+  }
+
+  @keyframes cardPulse {
+    0% {
+      box-shadow: 0 0 0 0.1vh rgba(140, 140, 140, 0.7);
+    }
+    50% {
+      box-shadow: 0 0 0 0.25vh rgba(140, 140, 140, 0.7);
+    }
+    100% {
+      box-shadow: 0 0 0 0.1vh rgba(140, 140, 140, 0.7);
+    }
+  }
+
   #actionIcon {
     cursor: pointer;
+  }
+
+  .circle {
+    border-radius: 100%;
   }
 
   .iconTitle {
@@ -142,7 +161,7 @@
   }
 
   hr {
-    margin: 0 0 1vh;
+    margin: 0.5vh 0;
   }
 
   .scrollX {
@@ -166,7 +185,16 @@
     border-radius: 3px;
     background-color: #FFFFFF;
     box-shadow: 0px 1px 4px #757D75;
-    margin: 0 0.5vh;
+    margin: 0.25vh 0.5vh 0;
+    vertical-align: top;
+  }
+
+  .pointer {
+    cursor: pointer;
+  }
+
+  .card.selected {
+    box-shadow: 0px 0px 0.5vh #006eff;
   }
 
   .cardPlaceholder {
@@ -210,7 +238,7 @@
   <div v-else-if="gameStatus === 'gameOver'">
     <div class="centerWindow">
       <span>
-        <button onclick="window.location.reload();">
+        <button onclick="window.location.reload(true);">
           Play again?
         </button>
       </span>
@@ -226,6 +254,8 @@
           :myPlayerId="myPlayerId"
           :playersTurn="playersTurn"
           :selectedCard="selectedCard"
+          :hasSummoned="myPlayer.hasSummoned"
+          :opponentsShieldsSize="opponent.shieldsSize"
           :socket="socket"
         />
       </div>
@@ -237,6 +267,8 @@
           :myPlayerId="myPlayerId"
           :playersTurn="playersTurn"
           :selectedCard="selectedCard"
+          :hasSummoned="myPlayer.hasSummoned"
+          :opponentsShieldsSize="opponent.shieldsSize"
           :socket="socket"
         />
       </div>
@@ -294,7 +326,7 @@
         <div id="me">
           <div class="monsters scrollX">
             <div class="scrollXCardContainer">
-              <div v-for="card in myPlayer.monsters" class="card">
+              <div v-for="card in myPlayer.monsters" v-on:click="() => selectCard(card, 'myMonster')" class="card pointer">
                 <div class="title" v-bind:title="card.name">
                   <span>
                     {{ card.name }}
@@ -321,7 +353,7 @@
           </div>
           <div class="hand scrollX">
             <div class="scrollXCardContainer" v-bind:style="{width: myPlayer.hand.length * 12 + 'vh'}">
-              <div v-for="card in myPlayer.hand" v-on:click="() => selectCard(card)" class="card">
+              <div v-for="card in myPlayer.hand" v-on:click="() => selectCard(card, 'myHand')" class="card pointer" v-bind:class="monsterCardClass">
                 <div class="title" v-bind:title="card.name">
                   <span>
                     {{ card.name }}
@@ -358,7 +390,7 @@
             <div
               v-if="windowWidth <= windowHeight"
               v-on:click="showModal = !showModal; selectedCard = undefined;"
-              class="iconContainer right"
+              class="iconContainer right circle"
               v-bind:class="hasAction"
             >
               <span id="actionIcon" class="unicodeIcon">
@@ -376,7 +408,7 @@
 </template>
 
 <script>
-  import { cloneDeep } from 'lodash';
+  import io from 'socket.io-client';
   import BattleKardsDetails from './battlekards_details.vue';
 
   export default {
@@ -391,12 +423,12 @@
       playersTurn: undefined,
       opponent: undefined,
       myPlayer: undefined,
-      selectedCard: undefined,
+      selectedCard: undefined
     }),
-    beforeMount () {
+    beforeMount() {
       this.socket = io();
       this.initGameSocket();
-      console.log('Game socket initiated')
+      console.log('Game socket initiated');
     },
     mounted() {
       window.addEventListener('resize', this.handleResize);
@@ -425,14 +457,14 @@
             deckSize: response.opponentsDeckSize,
             shieldsSize: response.opponentsShieldsSize,
             handSize: response.opponentsHandSize,
-            monsters: [],
+            monsters: []
           };
           this.myPlayer = {
             deckSize: response.myDeckSize,
             shieldsSize: response.myShieldsSize,
             hand: response.myHand,
             monsters: [],
-
+            hasSummoned: false
           };
         });
 
@@ -442,7 +474,12 @@
           if (this.playersTurn === this.myPlayerId) {
             this.myPlayer.hand.push(response.cardDrawn);
             this.myPlayer.deckSize = response.myDeckSize;
+            this.myPlayer.hasSummoned = false;
+            this.myPlayer.monsters = this.myPlayer.monsters.map(monster =>
+              Object.assign(monster, { canAttack: true })
+            );
           } else {
+            this.opponent.handSize = response.opponentsHandSize;
             this.opponent.deckSize = response.opponentsDeckSize;
           }
         });
@@ -450,15 +487,14 @@
         this.socket.on('summoned', (card) => {
           console.log('Summoned: ', card);
 
-          const monsterIndex = this.myPlayer.hand.findIndex(function(cardInHand) { // find card index
-            return cardInHand.id === card.id;
-          });
-
-          const monster = cloneDeep(this.myPlayer.hand[monsterIndex]);
-
+          const monsterIndex = this.myPlayer.hand.findIndex(cardInHand =>
+            cardInHand.id === card.id
+          );
           this.myPlayer.hand.splice(monsterIndex, 1);
-          this.myPlayer.monsters.push(monster);
+          this.myPlayer.monsters.push(card);
+          this.myPlayer.hasSummoned = true;
 
+          this.selectedCard = undefined;
         });
 
         this.socket.on('opponentSummoned', (response) => {
@@ -467,29 +503,73 @@
           this.opponent.handSize = response.opponentsHandSize;
         });
 
+        this.socket.on('attacked', (monster, target) => {
+          console.log('attacked', monster, target);
+          const myMonster = this.myPlayer.monsters.find(cardInHand =>
+            cardInHand.id === monster.id
+          );
+          myMonster.canAttack = false;
+          if (target === 'shield') {
+            this.opponent.shieldsSize -= 1;
+          } else {
+            console.error('invalid target');
+          }
+        });
+
+        this.socket.on('opponentAttacked', (monster, target, shield) => {
+          console.log('opponentAttacked', monster, target, shield);
+          if (target === 'shield') {
+            this.myPlayer.shieldsSize -= 1;
+            this.myPlayer.hand.push(shield);
+          } else {
+            console.error('invalid target');
+          }
+        });
+
         this.socket.on('win', (message) => {
           console.log('win', message);
           this.gameStatus = 'gameOver';
-          alert('You won! ' + message);
+
+          // TODO Use modal instead of alert
+          alert(`You won! ${message}`);
+        });
+
+        this.socket.on('lose', (message) => {
+          console.log('lose', message);
+          this.gameStatus = 'gameOver';
+
+          // TODO Use modal instead of alert
+          alert(`You lost! ${message}`);
         });
 
         this.socket.on('invalidMove', (message) => {
           console.warn('Invalid move:', message);
         });
       },
-      selectCard(card) {
-        this.selectedCard = card;
+      selectCard(card, cardField) {
+        this.selectedCard = { card, cardField };
       }
     },
     computed: {
-      hasAction: function () {
+      hasAction() {
         return {
-          pulse: this.playersTurn === this.myPlayerId && !this.showModal,
+          pulse: this.playersTurn === this.myPlayerId &&
+              !this.showModal &&
+              this.myPlayer.hasSummoned
         };
       },
+      monsterCardClass() {
+        const result = [];
+        if (this.playersTurn === this.myPlayerId &&
+            this.selectedCard === undefined &&
+            !this.myPlayer.hasSummoned) {
+          result.push('cardPulse');
+        }
+        return result;
+      }
     },
     components: {
-      BattleKardsDetails,
-    },
+      BattleKardsDetails
+    }
   };
 </script>

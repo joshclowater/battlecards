@@ -1,14 +1,14 @@
-var _ = require('lodash');
-var uuid = require('uuid/v4');
+const _ = require('lodash');
+const uuid = require('uuid/v4');
 
-var deck = exports.deck = [
+exports.deck = [
   {
     id: uuid(),
     name: 'The little cornpop that could',
     type: 'monster',
     attributes: {
       attack: 800,
-      defense: 800,
+      defense: 800
     }
   }, {
     id: uuid(),
@@ -16,7 +16,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 0,
-      defense: 1300,
+      defense: 1300
     }
   }, {
     id: uuid(),
@@ -24,7 +24,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 1250,
-      defense: 750,
+      defense: 750
     }
   }, {
     id: uuid(),
@@ -32,7 +32,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 300,
-      defense: 500,
+      defense: 500
     }
   }, {
     id: uuid(),
@@ -40,7 +40,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 600,
-      defense: 100,
+      defense: 100
     }
   }, {
     id: uuid(),
@@ -48,7 +48,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 1300,
-      defense: 1000,
+      defense: 1000
     }
   }, {
     id: uuid(),
@@ -56,7 +56,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 1400,
-      defense: 1400,
+      defense: 1400
     }
   }, {
     id: uuid(),
@@ -64,7 +64,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 1100,
-      defense: 1200,
+      defense: 1200
     }
   }, {
     id: uuid(),
@@ -72,7 +72,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 1111,
-      defense: 666,
+      defense: 666
     }
   }, {
     id: uuid(),
@@ -80,7 +80,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 1200,
-      defense: 1000,
+      defense: 1000
     }
   }, {
     id: uuid(),
@@ -88,7 +88,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 750,
-      defense: 1000,
+      defense: 1000
     }
   }, {
     id: uuid(),
@@ -96,7 +96,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 1150,
-      defense: 600,
+      defense: 600
     }
   }, {
     id: uuid(),
@@ -104,7 +104,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 333,
-      defense: 333,
+      defense: 333
     }
   }, {
     id: uuid(),
@@ -112,7 +112,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 1300,
-      defense: 550,
+      defense: 550
     }
   }, {
     id: uuid(),
@@ -120,7 +120,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 100,
-      defense: 1400,
+      defense: 1400
     }
   }, {
     id: uuid(),
@@ -128,7 +128,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 1200,
-      defense: 1200,
+      defense: 1200
     }
   }, {
     id: uuid(),
@@ -136,7 +136,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 700,
-      defense: 1300,
+      defense: 1300
     }
   }, {
     id: uuid(),
@@ -144,7 +144,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 1250,
-      defense: 1150,
+      defense: 1150
     }
   }, {
     id: uuid(),
@@ -152,7 +152,7 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 900,
-      defense: 800,
+      defense: 800
     }
   }, {
     id: uuid(),
@@ -160,14 +160,14 @@ var deck = exports.deck = [
     type: 'monster',
     attributes: {
       attack: 1350,
-      defense: 1300,
+      defense: 1300
     }
   }
 ];
 
-var drawFrom = exports.drawFrom = function(deck) {
-  var drawIndex = Math.floor(Math.random() * deck.length);
-  var cardDrawn = _.cloneDeep(deck[drawIndex]);
+exports.drawFrom = function drawFrom(deck) {
+  const drawIndex = Math.floor(Math.random() * deck.length);
+  const cardDrawn = _.cloneDeep(deck[drawIndex]);
   deck.splice(drawIndex, 1);
   return cardDrawn;
 };
