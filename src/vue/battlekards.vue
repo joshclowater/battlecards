@@ -307,15 +307,17 @@
                     {{ card.name }}
                   </span>
                 </div>
-                <div class="atk">
-                  <span>
-                    Atk: {{ card.attributes.attack }}
-                  </span>
-                </div>
-                <div class="def">
-                  <span>
-                    Def: {{ card.attributes.defense }}
-                  </span>
+                <div v-if="card.name !='Defense'">
+                  <div class="atk">
+                    <span>
+                      Atk: {{ card.attributes.attack }}
+                    </span>
+                  </div>
+                  <div class="def">
+                    <span>
+                      Def: {{ card.attributes.defense }}
+                    </span>
+                  </div>
                 </div>
               </div>
               <div v-for="n in (5 - opponent.monsters.length)" class="card cardPlaceholder"></div>
@@ -328,19 +330,21 @@
             <div class="scrollXCardContainer">
               <div v-for="card in myPlayer.monsters" v-on:click="() => selectCard(card, 'myMonster')" class="card pointer">
                 <div class="title" v-bind:title="card.name">
-                  <span>
-                    {{ card.name }}
-                  </span>
-                </div>
-                <div class="atk">
-                  <span>
-                    Atk: {{ card.attributes.attack }}
-                  </span>
-                </div>
-                <div class="def">
-                  <span>
-                    Def: {{ card.attributes.defense }}
-                  </span>
+                    <span>
+                      {{ card.name }}
+                    </span>
+                  </div>
+                  <div v-if="card.name !='Defense'">
+                    <div class="atk">
+                      <span>
+                        Atk: {{ card.attributes.attack }}
+                      </span>
+                    </div>
+                    <div class="def">
+                      <span>
+                        Def: {{ card.attributes.defense }}
+                      </span>
+                    </div>
                 </div>
               </div>
               <div v-for="n in (5 - myPlayer.monsters.length)" class="card cardPlaceholder"></div>
@@ -484,7 +488,7 @@
           }
         });
 
-        this.socket.on('summoned', (card) => {
+        this.socket.on('summonedAttack', (card) => {
           console.log('Summoned: ', card);
 
           const monsterIndex = this.myPlayer.hand.findIndex(cardInHand =>
@@ -497,8 +501,31 @@
           this.selectedCard = undefined;
         });
 
-        this.socket.on('opponentSummoned', (response) => {
-          console.log('Opponent summoned: ', response);
+        this.socket.on('summonedDefense', (card) => {
+          console.log('Summoned: ', card);
+
+          const monsterIndex = this.myPlayer.hand.findIndex(cardInHand =>
+            cardInHand.id === card.id
+          );
+          this.myPlayer.hand.splice(monsterIndex, 1);
+          const defenseMonster = card;
+          defenseMonster.name = 'Defense';
+
+          this.myPlayer.monsters.push(defenseMonster);
+          this.myPlayer.hasSummoned = true;
+
+          this.selectedCard = undefined;
+        });
+
+        this.socket.on('opponentSummonedAttack', (response) => {
+          console.log('Opponent summoned Attack: ', response);
+          this.opponent.monsters.push(response.monster);
+          this.opponent.handSize = response.opponentsHandSize;
+        });
+
+        this.socket.on('opponentSummonedDefense', (response) => {
+          console.log('Opponent summoned Defense: ', response);
+          response.monster.name = 'Defense';
           this.opponent.monsters.push(response.monster);
           this.opponent.handSize = response.opponentsHandSize;
         });

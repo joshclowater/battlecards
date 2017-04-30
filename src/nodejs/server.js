@@ -134,7 +134,7 @@ io.sockets.on('connection', (socket) => {
     }
   });
 
-  socket.on('summon', (cardId) => {
+  socket.on('summonAttack', (cardId) => {
     if (game.gameStarted && game.playersTurn === playerId && !game.players[playerId].hasSummoned) {
       const monsterIndex = game.players[game.playersTurn].hand.findIndex(cardInHand =>
         cardInHand.id === cardId
@@ -147,8 +147,36 @@ io.sockets.on('connection', (socket) => {
         game.players[game.playersTurn].hand.splice(monsterIndex, 1);
         game.players[game.playersTurn].monsters.push(monster);
 
-        socket.emit('summoned', monster);
-        sockets[game.inactivePlayer].emit('opponentSummoned', {
+        socket.emit('summonedAttack', monster);
+        sockets[game.inactivePlayer].emit('opponentSummonedAttack', {
+          monster,
+          opponentsHandSize: game.players[game.playersTurn].hand.length
+        });
+      } else {
+        socket.emit('invalidMove', 'card not in hand');
+      }
+    } else if (!(game.gameStarted && game.playersTurn === playerId)) {
+      socket.emit('invalidMove', 'not your turn');
+    } else {
+      socket.emit('invalidMove', 'you already summoned');
+    }
+  });
+
+  socket.on('summonDefense', (cardId) => {
+    if (game.gameStarted && game.playersTurn === playerId && !game.players[playerId].hasSummoned) {
+      const monsterIndex = game.players[game.playersTurn].hand.findIndex(cardInHand =>
+        cardInHand.id === cardId
+      );
+      if (monsterIndex !== -1) {
+        const monster = _.cloneDeep(game.players[game.playersTurn].hand[monsterIndex]);
+        monster.canAttack = false;
+
+        game.players[playerId].hasSummoned = true; // Player cannot summon again
+        game.players[game.playersTurn].hand.splice(monsterIndex, 1);
+        game.players[game.playersTurn].monsters.push(monster);
+
+        socket.emit('summonedDefense', monster);
+        sockets[game.inactivePlayer].emit('opponentSummonedDefense', {
           monster,
           opponentsHandSize: game.players[game.playersTurn].hand.length
         });
