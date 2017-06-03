@@ -1,5 +1,5 @@
 <style>
-  /* Hide vue show attribute used so they don't appear until vue instance is ready */
+  /* Hide vue attributes by default so they don't appear until vue instance is ready */
   [v-show], [v-if], [v-else-if], [v-else], [v-cloak] {
     display: none;
   }
