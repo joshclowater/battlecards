@@ -125,22 +125,6 @@
     }
   }
 
-  .cardPulse {
-    animation: cardPulse 1.25s infinite ease-in-out;
-  }
-
-  @keyframes cardPulse {
-    0% {
-      box-shadow: 0 0 0 0.1vh rgba(140, 140, 140, 0.7);
-    }
-    50% {
-      box-shadow: 0 0 0 0.25vh rgba(140, 140, 140, 0.7);
-    }
-    100% {
-      box-shadow: 0 0 0 0.1vh rgba(140, 140, 140, 0.7);
-    }
-  }
-
   #actionIcon {
     cursor: pointer;
   }
@@ -189,30 +173,8 @@
     vertical-align: top;
   }
 
-  .pointer {
-    cursor: pointer;
-  }
-
-  .card.selected {
-    box-shadow: 0px 0px 0.5vh #006eff;
-  }
-
   .cardPlaceholder {
     box-shadow: inset 0px 1px 3px #757D75;
-  }
-
-  .card div {
-    padding: 0.5vh;
-    text-align: center;
-  }
-
-  .card .title {
-    text-overflow: ellipsis;
-    overflow: hidden;
-  }
-
-  .card .atk {
-    margin-top: 7vh;
   }
 
   #bottomBar {
@@ -301,23 +263,12 @@
           </div>
           <div class="monsters scrollX">
             <div class="scrollXCardContainer">
-              <div v-for="card in opponent.monsters" class="card">
-                <div class="title" v-bind:title="card.name">
-                  <span>
-                    {{ card.name }}
-                  </span>
-                </div>
-                <div class="atk">
-                  <span>
-                    Atk: {{ card.attributes.attack }}
-                  </span>
-                </div>
-                <div class="def">
-                  <span>
-                    Def: {{ card.attributes.defense }}
-                  </span>
-                </div>
-              </div>
+              <Card
+                v-for="card in opponent.monsters"
+                :card="card"
+                cardField="opponentMonster"
+                @onClick="selectCard(card, 'opponentMonster')"
+              />
               <div v-for="n in (5 - opponent.monsters.length)" class="card cardPlaceholder"></div>
             </div>
           </div>
@@ -326,23 +277,12 @@
         <div id="me">
           <div class="monsters scrollX">
             <div class="scrollXCardContainer">
-              <div v-for="card in myPlayer.monsters" v-on:click="() => selectCard(card, 'myMonster')" class="card pointer">
-                <div class="title" v-bind:title="card.name">
-                  <span>
-                    {{ card.name }}
-                  </span>
-                </div>
-                <div class="atk">
-                  <span>
-                    Atk: {{ card.attributes.attack }}
-                  </span>
-                </div>
-                <div class="def">
-                  <span>
-                    Def: {{ card.attributes.defense }}
-                  </span>
-                </div>
-              </div>
+              <Card
+                v-for="card in myPlayer.monsters"
+                :card="card"
+                cardField="myMonster"
+                @onClick="selectCard(card, 'myMonster')"
+              />
               <div v-for="n in (5 - myPlayer.monsters.length)" class="card cardPlaceholder"></div>
             </div>
           </div>
@@ -353,23 +293,15 @@
           </div>
           <div class="hand scrollX">
             <div class="scrollXCardContainer" v-bind:style="{width: myPlayer.hand.length * 12 + 'vh'}">
-              <div v-for="card in myPlayer.hand" v-on:click="() => selectCard(card, 'myHand')" class="card pointer" v-bind:class="monsterCardClass">
-                <div class="title" v-bind:title="card.name">
-                  <span>
-                    {{ card.name }}
-                  </span>
-                </div>
-                <div class="atk">
-                  <span>
-                    Atk: {{ card.attributes.attack }}
-                  </span>
-                </div>
-                <div class="def">
-                  <span>
-                    Def: {{ card.attributes.defense }}
-                  </span>
-                </div>
-              </div>
+              <Card
+                v-for="card in myPlayer.hand"
+                :card="card"
+                cardField="myHand"
+                @onClick="selectCard(card, 'myHand')"
+                :pulse="playersTurn === myPlayerId &&
+                    selectedCard === undefined &&
+                    !myPlayer.hasSummoned"
+              />
             </div>
           </div>
         </div>
@@ -410,9 +342,14 @@
 <script>
   import io from 'socket.io-client';
   import BattleKardsDetails from './battlekards_details.vue';
+  import Card from './card.vue';
 
   export default {
     name: 'BattleKards',
+    components: {
+      BattleKardsDetails,
+      Card
+    },
     data: () => ({
       windowHeight: undefined,
       windowWidth: undefined,
@@ -531,7 +468,7 @@
           this.gameStatus = 'gameOver';
 
           // TODO Use modal instead of alert
-          alert(`You won! ${message}`);
+          alert(`You won! ${message}`); // eslint-disable-line no-alert
         });
 
         this.socket.on('lose', (message) => {
@@ -539,7 +476,7 @@
           this.gameStatus = 'gameOver';
 
           // TODO Use modal instead of alert
-          alert(`You lost! ${message}`);
+          alert(`You lost! ${message}`); // eslint-disable-line no-alert
         });
 
         this.socket.on('invalidMove', (message) => {
@@ -557,19 +494,7 @@
               !this.showModal &&
               this.myPlayer.hasSummoned
         };
-      },
-      monsterCardClass() {
-        const result = [];
-        if (this.playersTurn === this.myPlayerId &&
-            this.selectedCard === undefined &&
-            !this.myPlayer.hasSummoned) {
-          result.push('cardPulse');
-        }
-        return result;
       }
-    },
-    components: {
-      BattleKardsDetails
     }
   };
 </script>
