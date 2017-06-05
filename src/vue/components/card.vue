@@ -1,6 +1,6 @@
 <style scoped>
-  .card {
-    cursor: pointer;
+  .card, .card * {
+    cursor: pointer !important;
   }
 
   .card.selected {
@@ -65,13 +65,18 @@
         type: Object,
         required: true
       },
-      onClick: {
-        type: Function,
+      cardField: {
+        type: String,
         required: true
       },
       pulse: {
         type: Boolean,
         default: false
+      }
+    },
+    methods: {
+      onClick() {
+        this.$emit('onClick');
       }
     }
   };

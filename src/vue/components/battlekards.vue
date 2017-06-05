@@ -266,7 +266,8 @@
               <Card
                 v-for="card in opponent.monsters"
                 :card="card"
-                :onClick="() => selectCard(card, 'opponentMonster')"
+                cardField="opponentMonster"
+                @onClick="selectCard(card, 'opponentMonster')"
               />
               <div v-for="n in (5 - opponent.monsters.length)" class="card cardPlaceholder"></div>
             </div>
@@ -279,7 +280,8 @@
               <Card
                 v-for="card in myPlayer.monsters"
                 :card="card"
-                :onClick="() => selectCard(card, 'myMonster')"
+                cardField="myMonster"
+                @onClick="selectCard(card, 'myMonster')"
               />
               <div v-for="n in (5 - myPlayer.monsters.length)" class="card cardPlaceholder"></div>
             </div>
@@ -294,7 +296,8 @@
               <Card
                 v-for="card in myPlayer.hand"
                 :card="card"
-                :onClick="() => selectCard(card, 'myHand')"
+                cardField="myHand"
+                @onClick="selectCard(card, 'myHand')"
                 :pulse="playersTurn === myPlayerId &&
                     selectedCard === undefined &&
                     !myPlayer.hasSummoned"
