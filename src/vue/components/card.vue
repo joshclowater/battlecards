@@ -12,12 +12,12 @@
     text-align: center;
   }
 
-  .card .title {
+  .title {
     text-overflow: ellipsis;
     overflow: hidden;
   }
 
-  .card .atk {
+  .atk {
     margin-top: 7vh;
   }
 

@@ -208,7 +208,7 @@
   </div>
   <div v-else-if="gameStatus === 'playing'">
     <div id="gameContainer">
-      <div id="details" v-if="windowWidth > windowHeight">
+      <div id="details" v-if="isLandscape">
         <div id="modalClose" v-if="selectedCard !== undefined" v-on:click="selectedCard = undefined;">
           &#10005;
         </div>
@@ -221,7 +221,7 @@
           :socket="socket"
         />
       </div>
-      <div id="detailsModal" v-if="windowWidth <= windowHeight" v-show="showModal || selectedCard !== undefined" >
+      <div id="detailsModal" v-if="!isLandscape" v-show="showModal || selectedCard !== undefined" >
         <div id="modalClose" v-on:click="showModal = false; selectedCard = undefined;">
           &#10005;
         </div>
@@ -320,7 +320,7 @@
           </div>
           <div class="flexEven">
             <div
-              v-if="windowWidth <= windowHeight"
+              v-if="!isLandscape"
               v-on:click="showModal = !showModal; selectedCard = undefined;"
               class="iconContainer right circle"
               v-bind:class="hasAction"
@@ -351,8 +351,7 @@
       Card
     },
     data: () => ({
-      windowHeight: undefined,
-      windowWidth: undefined,
+      isLandscape: true,
       socket: undefined,
       showModal: false,
       gameStatus: undefined,
@@ -366,8 +365,7 @@
       this.socket = io();
       this.initGameSocket();
       console.log('Game socket initiated');
-    },
-    mounted() {
+
       window.addEventListener('resize', this.handleResize);
       this.handleResize();
     },
@@ -376,8 +374,7 @@
     },
     methods: {
       handleResize() {
-        this.windowHeight = window.innerHeight;
-        this.windowWidth = window.innerWidth;
+        this.isLandscape = window.innerWidth > window.innerHeight;
       },
       initGameSocket() {
         this.socket.on('waitingForAnotherPlayer', () => {
