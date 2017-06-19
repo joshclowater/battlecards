@@ -141,21 +141,20 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
       }
     });
 
-    socket.on('attack', (cardId, target) => {
+    socket.on('attack', (attackingMonsterId, target) => {
       if (game.gameStarted && game.playersTurn === playerId) {
-        const monsterIndex = game.players[game.playersTurn].monsters.findIndex(cardInHand =>
-          cardInHand.id === cardId
+        const attackingMonster = game.players[game.playersTurn].monsters.find(cardInHand =>
+          cardInHand.id === attackingMonsterId
         );
-        if (monsterIndex !== -1) {
-          const monster = game.players[game.playersTurn].monsters[monsterIndex];
-          if (monster.canAttack) {
+        if (attackingMonster !== undefined) {
+          if (attackingMonster.canAttack) {
             if (target === 'shield' && game.players[game.inactivePlayer].shields.length > 0) {
               // Move shield into hand
               const shield = deckUtils.drawFrom(game.players[game.inactivePlayer].shields);
               game.players[game.inactivePlayer].hand.push(shield);
-              monster.canAttack = false;
-              socket.emit('attacked', monster, target);
-              sockets[game.inactivePlayer].emit('opponentAttacked', monster, target, shield);
+              attackingMonster.canAttack = false;
+              socket.emit('attacked', attackingMonsterId, target);
+              sockets[game.inactivePlayer].emit('opponentAttacked', attackingMonsterId, target, { shield });
             } else if (target === 'player' && game.players[game.inactivePlayer].shields.length === 0) {
               // End game
               games[game.id].gameOver = true;
@@ -167,7 +166,37 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
               delete sockets[game.inactivePlayer];
               delete games[game.id];
             } else {
-              socket.emit('invalidMove', 'invalid target');
+              const targetMonster = _.cloneDeep(game.players[game.inactivePlayer].monsters.find(opponentMonster =>
+                opponentMonster.id === target
+              ));
+              const destroyedMonsters = [];
+              if (targetMonster !== undefined) {
+                if (targetMonster.attributes.attack < attackingMonster.attributes.attack) {
+                  game.players[game.inactivePlayer].monsters = game.players[game.inactivePlayer].monsters.filter(monster =>
+                    monster.id !== target
+                  );
+                  destroyedMonsters.push(target);
+                } else if (targetMonster.attributes.attack > attackingMonster.attributes.attack) {
+                  game.players[game.playersTurn].monsters = game.players[game.playersTurn].monsters.filter(monster =>
+                    monster.id !== attackingMonster.id
+                  );
+                  destroyedMonsters.push(attackingMonsterId);
+                } else {
+                  game.players[game.inactivePlayer].monsters = game.players[game.inactivePlayer].monsters.filter(monster =>
+                    monster.id !== target
+                  );
+                  game.players[game.playersTurn].monsters = game.players[game.playersTurn].monsters.filter(monster =>
+                    monster.id !== attackingMonster.id
+                  );
+                  destroyedMonsters.push(targetMonster);
+                  destroyedMonsters.push(attackingMonsterId);
+                }
+                console.log(`${attackingMonster.name} (Atk: ${attackingMonster.attributes.attack}) attacked ${targetMonster.name} (Atk: ${targetMonster.attributes.attack})`);
+                socket.emit('attacked', attackingMonsterId, target, { destroyedMonsters });
+                sockets[game.inactivePlayer].emit('opponentAttacked', attackingMonsterId, target, { destroyedMonsters });
+              } else {
+                socket.emit('invalidMove', 'invalid target');
+              }
             }
           } else {
             socket.emit('invalidMove', 'monster cannot attack');

@@ -218,6 +218,7 @@
           :selectedCard="selectedCard"
           :hasSummoned="myPlayer.hasSummoned"
           :opponentsShieldsSize="opponent.shieldsSize"
+          :opponentsMonsters="opponent.monsters"
           :socket="socket"
         />
       </div>
@@ -231,6 +232,7 @@
           :selectedCard="selectedCard"
           :hasSummoned="myPlayer.hasSummoned"
           :opponentsShieldsSize="opponent.shieldsSize"
+          :opponentsMonsters="opponent.monsters"
           :socket="socket"
         />
       </div>
@@ -437,26 +439,40 @@
           this.opponent.handSize = response.opponentsHandSize;
         });
 
-        this.socket.on('attacked', (monster, target) => {
-          console.log('attacked', monster, target);
+        this.socket.on('attacked', (attackingMonsterId, target, results) => {
+          console.log('attacked', attackingMonsterId, target, results);
           const myMonster = this.myPlayer.monsters.find(cardInHand =>
-            cardInHand.id === monster.id
+            cardInHand.id === attackingMonsterId
           );
           myMonster.canAttack = false;
           if (target === 'shield') {
             this.opponent.shieldsSize -= 1;
           } else {
-            console.error('invalid target');
+            results.destroyedMonsters.forEach((destroyedMonsterId) => {
+              this.myPlayer.monsters = this.myPlayer.monsters.filter(monster =>
+                monster.id !== destroyedMonsterId
+              );
+              this.opponent.monsters = this.opponent.monsters.filter(monster =>
+                monster.id !== destroyedMonsterId
+              );
+            });
           }
         });
 
-        this.socket.on('opponentAttacked', (monster, target, shield) => {
-          console.log('opponentAttacked', monster, target, shield);
+        this.socket.on('opponentAttacked', (attackingMonsterId, target, results) => {
+          console.log('opponentAttacked', attackingMonsterId, target, results);
           if (target === 'shield') {
             this.myPlayer.shieldsSize -= 1;
-            this.myPlayer.hand.push(shield);
+            this.myPlayer.hand.push(results.shield);
           } else {
-            console.error('invalid target');
+            results.destroyedMonsters.forEach((destroyedMonsterId) => {
+              this.myPlayer.monsters = this.myPlayer.monsters.filter(monster =>
+                monster.id !== destroyedMonsterId
+              );
+              this.opponent.monsters = this.opponent.monsters.filter(monster =>
+                monster.id !== destroyedMonsterId
+              );
+            });
           }
         });
 
