@@ -58,6 +58,12 @@
         >
           Attak Opponent
         </button>
+        <button
+          v-for="opponentMonster in opponentsMonsters"
+          v-on:click="attackMonster(opponentMonster.id)"
+        >
+          Attak {{ opponentMonster.name }}
+        </button>
       </div>
     </div>
     <div v-else >
@@ -101,6 +107,10 @@
         type: Number,
         required: true
       },
+      opponentsMonsters: {
+        type: Array,
+        required: true
+      },
       socket: {
         type: Object,
         required: true
@@ -125,6 +135,11 @@
       attackOpponent() {
         console.log('attack', this.selectedCard.card.id, 'player');
         this.socket.emit('attack', this.selectedCard.card.id, 'player');
+      },
+
+      attackMonster(opponentMonsterId) {
+        console.log('attack', this.selectedCard.card.id, opponentMonsterId);
+        this.socket.emit('attack', this.selectedCard.card.id, opponentMonsterId);
       },
 
       endTurnButtonClass() {

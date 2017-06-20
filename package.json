@@ -1,7 +1,7 @@
 {
   "name": "battlecards",
   "description": "Battle card game",
-  "version": "0.0.1-SNAPSHOT",
+  "version": "0.1.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/joshclowater/battlecards"
