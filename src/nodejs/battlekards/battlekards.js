@@ -188,7 +188,7 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
                   game.players[game.playersTurn].monsters = game.players[game.playersTurn].monsters.filter(monster =>
                     monster.id !== attackingMonster.id
                   );
-                  destroyedMonsters.push(targetMonster);
+                  destroyedMonsters.push(target);
                   destroyedMonsters.push(attackingMonsterId);
                 }
                 console.log(`${attackingMonster.name} (Atk: ${attackingMonster.attributes.attack}) attacked ${targetMonster.name} (Atk: ${targetMonster.attributes.attack})`);
