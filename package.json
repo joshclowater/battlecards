@@ -11,6 +11,7 @@
     "dev": "npm run build:js; concurrently \"npm run serve\" \"npm run watch:js\"",
     "serve": "nodemon src/nodejs/server.js",
     "start": "npm run buildprod:js; node src/nodejs/server.js",
+    "debug": "npm run buildprod:js; node --debug --nolazy src/nodejs/server.js",
     "watch:js": "watchify src/vue/app.js -t vueify -t babelify -p browserify-hmr -p [ vueify/plugins/extract-css -o public/styles.bundle.css ] -o public/app.bundle.js",
     "build:js": "browserify src/vue/app.js -t vueify -p [ vueify/plugins/extract-css -o public/styles.bundle.css ] -t babelify -o public/app.bundle.js",
     "buildprod:js": "NODE_ENV=production browserify src/vue/app.js -g envify -t vueify -p [ vueify/plugins/extract-css -o public/styles.bundle.css ] -t babelify -o public/app.bundle.js",
