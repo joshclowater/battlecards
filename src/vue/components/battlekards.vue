@@ -212,7 +212,7 @@
         <div id="modalClose" v-if="selectedCard !== undefined" v-on:click="selectedCard = undefined;">
           &#10005;
         </div>
-        <Battle-Kards-Details
+        <battle-kards-details
           :myPlayerId="myPlayerId"
           :playersTurn="playersTurn"
           :selectedCard="selectedCard"
@@ -226,7 +226,7 @@
         <div id="modalClose" v-on:click="showModal = false; selectedCard = undefined;">
           &#10005;
         </div>
-        <Battle-Kards-Details
+        <battle-kards-details
           :myPlayerId="myPlayerId"
           :playersTurn="playersTurn"
           :selectedCard="selectedCard"
@@ -265,7 +265,7 @@
           </div>
           <div class="monsters scrollX">
             <div class="scrollXCardContainer">
-              <Card
+              <card
                 v-for="card in opponent.monsters"
                 :card="card"
                 cardField="opponentMonster"
@@ -279,7 +279,7 @@
         <div id="me">
           <div class="monsters scrollX">
             <div class="scrollXCardContainer">
-              <Card
+              <card
                 v-for="card in myPlayer.monsters"
                 :card="card"
                 cardField="myMonster"
@@ -295,7 +295,7 @@
           </div>
           <div class="hand scrollX">
             <div class="scrollXCardContainer" v-bind:style="{width: myPlayer.hand.length * 12 + 'vh'}">
-              <Card
+              <card
                 v-for="card in myPlayer.hand"
                 :card="card"
                 cardField="myHand"
