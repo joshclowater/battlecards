@@ -240,19 +240,19 @@
         <div class="bar">
           <div class="deck flexEven">
             <div class="iconContainer">
-              <img src="assets/deck.svg" alt="Deck:" class="icon"/>
+              <img src="../assets/deck.svg" alt="Deck:" class="icon"/>
               <span class="iconTitle">x&nbsp;{{ opponent.deckSize }}</span>
             </div>
           </div>
           <div class="shields">
             <div class="iconContainer">
-              <img src="assets/shield.svg" alt="Shields:" class="icon"/>
+              <img src="../assets/shield.svg" alt="Shields:" class="icon"/>
               <span class="iconTitle">x&nbsp;{{ opponent.shieldsSize }}</span>
             </div>
           </div>
           <div class="hand flexEven">
             <div class="iconContainer right">
-              <img src="assets/card.svg" alt="Cards:" class="icon"/>
+              <img src="../assets/card.svg" alt="Cards:" class="icon"/>
               <span class="iconTitle">x&nbsp;{{ opponent.handSize }}</span>
             </div>
           </div>
@@ -267,8 +267,8 @@
             <div class="scrollXCardContainer">
               <card
                 v-for="card in opponent.monsters"
+                key="card.id"
                 :card="card"
-                cardField="opponentMonster"
                 @onClick="selectCard(card, 'opponentMonster')"
               />
               <div v-for="n in (5 - opponent.monsters.length)" class="card cardPlaceholder"></div>
@@ -281,8 +281,8 @@
             <div class="scrollXCardContainer">
               <card
                 v-for="card in myPlayer.monsters"
+                key="card.id"
                 :card="card"
-                cardField="myMonster"
                 @onClick="selectCard(card, 'myMonster')"
               />
               <div v-for="n in (5 - myPlayer.monsters.length)" class="card cardPlaceholder"></div>
@@ -297,8 +297,8 @@
             <div class="scrollXCardContainer" v-bind:style="{width: myPlayer.hand.length * 12 + 'vh'}">
               <card
                 v-for="card in myPlayer.hand"
+                key="card.id"
                 :card="card"
-                cardField="myHand"
                 @onClick="selectCard(card, 'myHand')"
                 :pulse="playersTurn === myPlayerId &&
                     selectedCard === undefined &&
@@ -310,13 +310,13 @@
         <div id="bottomBar" class="bar">
           <div class="deck flexEven">
             <div class="iconContainer">
-              <img src="assets/deck.svg" alt="Deck:" class="icon"/>
+              <img src="../assets/deck.svg" alt="Deck:" class="icon"/>
               <span class="iconTitle">x&nbsp;{{ myPlayer.deckSize }}</span>
             </div>
           </div>
           <div class="shields">
             <div class="iconContainer">
-              <img src="assets/shield.svg" alt="Shields:" class="icon"/>
+              <img src="../assets/shield.svg" alt="Shields:" class="icon"/>
               <span class="iconTitle">x&nbsp;{{ myPlayer.shieldsSize }}</span>
             </div>
           </div>
@@ -343,14 +343,14 @@
 
 <script>
   import io from 'socket.io-client';
-  import BattleKardsDetails from './battlekards_details.vue';
-  import Card from './card.vue';
+  import BattleKardsDetails from './battlekards_details';
+  import Card from './card';
 
   export default {
     name: 'BattleKards',
     components: {
       BattleKardsDetails,
-      Card
+      Card,
     },
     data: () => ({
       isLandscape: true,
@@ -361,7 +361,7 @@
       playersTurn: undefined,
       opponent: undefined,
       myPlayer: undefined,
-      selectedCard: undefined
+      selectedCard: undefined,
     }),
     beforeMount() {
       this.socket = io();
@@ -393,14 +393,14 @@
             deckSize: response.opponentsDeckSize,
             shieldsSize: response.opponentsShieldsSize,
             handSize: response.opponentsHandSize,
-            monsters: []
+            monsters: [],
           };
           this.myPlayer = {
             deckSize: response.myDeckSize,
             shieldsSize: response.myShieldsSize,
             hand: response.myHand,
             monsters: [],
-            hasSummoned: false
+            hasSummoned: false,
           };
         });
 
@@ -411,9 +411,9 @@
             this.myPlayer.hand.push(response.cardDrawn);
             this.myPlayer.deckSize = response.myDeckSize;
             this.myPlayer.hasSummoned = false;
-            this.myPlayer.monsters = this.myPlayer.monsters.map(monster =>
+            this.myPlayer.monsters = this.myPlayer.monsters.map(monster => (
               Object.assign(monster, { canAttack: true })
-            );
+            ));
           } else {
             this.opponent.handSize = response.opponentsHandSize;
             this.opponent.deckSize = response.opponentsDeckSize;
@@ -423,9 +423,9 @@
         this.socket.on('summoned', (card) => {
           console.log('Summoned: ', card);
 
-          const monsterIndex = this.myPlayer.hand.findIndex(cardInHand =>
+          const monsterIndex = this.myPlayer.hand.findIndex(cardInHand => (
             cardInHand.id === card.id
-          );
+          ));
           this.myPlayer.hand.splice(monsterIndex, 1);
           this.myPlayer.monsters.push(card);
           this.myPlayer.hasSummoned = true;
@@ -441,22 +441,23 @@
 
         this.socket.on('attacked', (attackingMonsterId, target, results) => {
           console.log('attacked', attackingMonsterId, target, results);
-          const myMonster = this.myPlayer.monsters.find(cardInHand =>
+          const myMonster = this.myPlayer.monsters.find(cardInHand => (
             cardInHand.id === attackingMonsterId
-          );
+          ));
           myMonster.canAttack = false;
           if (target === 'shield') {
             this.opponent.shieldsSize -= 1;
           } else {
             results.destroyedMonsters.forEach((destroyedMonsterId) => {
-              this.myPlayer.monsters = this.myPlayer.monsters.filter(monster =>
+              this.myPlayer.monsters = this.myPlayer.monsters.filter(monster => (
                 monster.id !== destroyedMonsterId
-              );
-              this.opponent.monsters = this.opponent.monsters.filter(monster =>
-                monster.id !== destroyedMonsterId
-              );
+              ));
+              this.opponent.monsters = this.opponent.monsters.filter(monster => (
+                (monster.id !== destroyedMonsterId)
+              ));
             });
           }
+          this.selectedCard = undefined;
         });
 
         this.socket.on('opponentAttacked', (attackingMonsterId, target, results) => {
@@ -466,12 +467,12 @@
             this.myPlayer.hand.push(results.shield);
           } else {
             results.destroyedMonsters.forEach((destroyedMonsterId) => {
-              this.myPlayer.monsters = this.myPlayer.monsters.filter(monster =>
+              this.myPlayer.monsters = this.myPlayer.monsters.filter(monster => (
                 monster.id !== destroyedMonsterId
-              );
-              this.opponent.monsters = this.opponent.monsters.filter(monster =>
+              ));
+              this.opponent.monsters = this.opponent.monsters.filter(monster => (
                 monster.id !== destroyedMonsterId
-              );
+              ));
             });
           }
         });
@@ -498,16 +499,16 @@
       },
       selectCard(card, cardField) {
         this.selectedCard = { card, cardField };
-      }
+      },
     },
     computed: {
       hasAction() {
         return {
           pulse: this.playersTurn === this.myPlayerId &&
               !this.showModal &&
-              this.myPlayer.hasSummoned
+              this.myPlayer.hasSummoned,
         };
-      }
-    }
+      },
+    },
   };
 </script>
