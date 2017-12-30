@@ -1,0 +1,30 @@
+/* Hide vue attributes by default so they don't appear until vue instance is ready */
+[v-show], [v-if], [v-else-if], [v-else], [v-cloak] {
+  display: none;
+}
+
+body {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  color: #2c3e50;
+  background-color: #ecf0f1;
+  font-family: 'Avenir', Helvetica, Arial, sans-serif;
+  margin: 0;
+  font-size: 2vh;
+}
+
+button {
+  border-radius: .25rem;
+  border: 1px solid transparent;
+  background-color: #c3d7e8;
+  padding: .5rem 1rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: #a9c5dc;
+}
+
+button:active {
+  background-color: #8aa8c1;
+}

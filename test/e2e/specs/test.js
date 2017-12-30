@@ -10,7 +10,9 @@ module.exports = {
 
     browser
       .url(devServer)
-      .waitForElementVisible('#app', 5000)
+      .waitForElementVisible('#homeContainer', 5000)
+      .click('button')
+      .waitForElementVisible('#battlekards', 5000)
       .assert.containsText('span', 'Waiting for another player to join...')
       .end();
   },
