@@ -1,35 +1,6 @@
 <style>
-  /* Hide vue attributes by default so they don't appear until vue instance is ready */
-  [v-show], [v-if], [v-else-if], [v-else], [v-cloak] {
-    display: none;
-  }
-
-  body {
-    background-color: #ecf0f1;
-    color: #292929;
-    font-family: 'Open Sans', sans-serif;
-    margin: 0;
-    font-size: 2vh;
-  }
-
   span {
     cursor: default;
-  }
-
-  button {
-    border-radius: .25rem;
-    border: 1px solid transparent;
-    background-color: #c3d7e8;
-    padding: .5rem 1rem;
-    cursor: pointer;
-  }
-
-  button:hover {
-    background-color: #a9c5dc;
-  }
-
-  button:active {
-    background-color: #8aa8c1;
   }
 
   .centerWindow {
@@ -183,161 +154,163 @@
 </style>
 
 <template>
-  <div v-if='gameStatus === undefined'>
-    <div class="centerWindow">
-      <span>
-        Connecting to server...
-      </span>
-    </div>
-  </div>
-  <div v-else-if='gameStatus === "waitingForAnotherPlayer"'>
-    <div class="centerWindow">
-      <span>
-        Waiting for another player to join...
-      </span>
-    </div>
-  </div>
-  <div v-else-if="gameStatus === 'gameOver'">
-    <div class="centerWindow">
-      <span>
-        <button onclick="window.location.reload(true);">
-          Play again?
-        </button>
-      </span>
-    </div>
-  </div>
-  <div v-else-if="gameStatus === 'playing'">
-    <div id="gameContainer">
-      <div id="details" v-if="isLandscape">
-        <div id="modalClose" v-if="selectedCard !== undefined" v-on:click="selectedCard = undefined;">
-          &#10005;
-        </div>
-        <battle-kards-details
-          :myPlayerId="myPlayerId"
-          :playersTurn="playersTurn"
-          :selectedCard="selectedCard"
-          :hasSummoned="myPlayer.hasSummoned"
-          :opponentsShieldsSize="opponent.shieldsSize"
-          :opponentsMonsters="opponent.monsters"
-          :socket="socket"
-        />
-      </div>
-      <div id="detailsModal" v-if="!isLandscape" v-show="showModal || selectedCard !== undefined" >
-        <div id="modalClose" v-on:click="showModal = false; selectedCard = undefined;">
-          &#10005;
-        </div>
-        <battle-kards-details
-          :myPlayerId="myPlayerId"
-          :playersTurn="playersTurn"
-          :selectedCard="selectedCard"
-          :hasSummoned="myPlayer.hasSummoned"
-          :opponentsShieldsSize="opponent.shieldsSize"
-          :opponentsMonsters="opponent.monsters"
-          :socket="socket"
-        />
-      </div>
-      <div id="game">
-        <div class="bar">
-          <div class="deck flexEven">
-            <div class="iconContainer">
-              <img src="../assets/deck.svg" alt="Deck:" class="icon"/>
-              <span class="iconTitle">x&nbsp;{{ opponent.deckSize }}</span>
-            </div>
-          </div>
-          <div class="shields">
-            <div class="iconContainer">
-              <img src="../assets/shield.svg" alt="Shields:" class="icon"/>
-              <span class="iconTitle">x&nbsp;{{ opponent.shieldsSize }}</span>
-            </div>
-          </div>
-          <div class="hand flexEven">
-            <div class="iconContainer right">
-              <img src="../assets/card.svg" alt="Cards:" class="icon"/>
-              <span class="iconTitle">x&nbsp;{{ opponent.handSize }}</span>
-            </div>
-          </div>
-        </div>
-        <div id="opponent">
-          <div class="magic scrollX">
-            <div class="scrollXCardContainer">
-              <div v-for="n in 5" class="card cardPlaceholder"></div>
-            </div>
-          </div>
-          <div class="monsters scrollX">
-            <div class="scrollXCardContainer">
-              <card
-                v-for="card in opponent.monsters"
-                key="card.id"
-                :card="card"
-                @onClick="selectCard(card, 'opponentMonster')"
-              />
-              <div v-for="n in (5 - opponent.monsters.length)" class="card cardPlaceholder"></div>
-            </div>
-          </div>
-        </div>
-        <hr />
-        <div id="me">
-          <div class="monsters scrollX">
-            <div class="scrollXCardContainer">
-              <card
-                v-for="card in myPlayer.monsters"
-                key="card.id"
-                :card="card"
-                @onClick="selectCard(card, 'myMonster')"
-              />
-              <div v-for="n in (5 - myPlayer.monsters.length)" class="card cardPlaceholder"></div>
-            </div>
-          </div>
-          <div class="magic scrollX">
-            <div class="scrollXCardContainer">
-              <div v-for="n in 5" class="card cardPlaceholder"></div>
-            </div>
-          </div>
-          <div class="hand scrollX">
-            <div class="scrollXCardContainer" v-bind:style="{width: myPlayer.hand.length * 12 + 'vh'}">
-              <card
-                v-for="card in myPlayer.hand"
-                key="card.id"
-                :card="card"
-                @onClick="selectCard(card, 'myHand')"
-                :pulse="playersTurn === myPlayerId &&
-                    selectedCard === undefined &&
-                    !myPlayer.hasSummoned"
-              />
-            </div>
-          </div>
-        </div>
-        <div id="bottomBar" class="bar">
-          <div class="deck flexEven">
-            <div class="iconContainer">
-              <img src="../assets/deck.svg" alt="Deck:" class="icon"/>
-              <span class="iconTitle">x&nbsp;{{ myPlayer.deckSize }}</span>
-            </div>
-          </div>
-          <div class="shields">
-            <div class="iconContainer">
-              <img src="../assets/shield.svg" alt="Shields:" class="icon"/>
-              <span class="iconTitle">x&nbsp;{{ myPlayer.shieldsSize }}</span>
-            </div>
-          </div>
-          <div class="flexEven">
-            <div
-              v-if="!isLandscape"
-              v-on:click="showModal = !showModal; selectedCard = undefined;"
-              class="iconContainer right circle"
-              v-bind:class="hasAction"
-            >
-              <span id="actionIcon" class="unicodeIcon">
-                &#9876;
-              </span>
-            </div>
-          </div>
-        </div>
+  <div id="battlekards">
+    <div v-if='gameStatus === undefined'>
+      <div class="centerWindow">
+        <span>
+          Connecting to server...
+        </span>
       </div>
     </div>
-  </div>
-  <div v-else>
-    Invalid game status {{ this.gameStatus }}
+    <div v-else-if='gameStatus === "waitingForAnotherPlayer"'>
+      <div class="centerWindow">
+        <span>
+          Waiting for another player to join...
+        </span>
+      </div>
+    </div>
+    <div v-else-if="gameStatus === 'gameOver'">
+      <div class="centerWindow">
+        <span>
+          <button onclick="window.location.reload(true);">
+            Play again?
+          </button>
+        </span>
+      </div>
+    </div>
+    <div v-else-if="gameStatus === 'playing'">
+      <div id="gameContainer">
+        <div id="details" v-if="isLandscape">
+          <div id="modalClose" v-if="selectedCard !== undefined" v-on:click="selectedCard = undefined;">
+            &#10005;
+          </div>
+          <battle-kards-details
+            :myPlayerId="myPlayerId"
+            :playersTurn="playersTurn"
+            :selectedCard="selectedCard"
+            :hasSummoned="myPlayer.hasSummoned"
+            :opponentsShieldsSize="opponent.shieldsSize"
+            :opponentsMonsters="opponent.monsters"
+            :socket="socket"
+          />
+        </div>
+        <div id="detailsModal" v-if="!isLandscape" v-show="showModal || selectedCard !== undefined" >
+          <div id="modalClose" v-on:click="showModal = false; selectedCard = undefined;">
+            &#10005;
+          </div>
+          <battle-kards-details
+            :myPlayerId="myPlayerId"
+            :playersTurn="playersTurn"
+            :selectedCard="selectedCard"
+            :hasSummoned="myPlayer.hasSummoned"
+            :opponentsShieldsSize="opponent.shieldsSize"
+            :opponentsMonsters="opponent.monsters"
+            :socket="socket"
+          />
+        </div>
+        <div id="game">
+          <div class="bar">
+            <div class="deck flexEven">
+              <div class="iconContainer">
+                <img src="../assets/deck.svg" alt="Deck:" class="icon"/>
+                <span class="iconTitle">x&nbsp;{{ opponent.deckSize }}</span>
+              </div>
+            </div>
+            <div class="shields">
+              <div class="iconContainer">
+                <img src="../assets/shield.svg" alt="Shields:" class="icon"/>
+                <span class="iconTitle">x&nbsp;{{ opponent.shieldsSize }}</span>
+              </div>
+            </div>
+            <div class="hand flexEven">
+              <div class="iconContainer right">
+                <img src="../assets/card.svg" alt="Cards:" class="icon"/>
+                <span class="iconTitle">x&nbsp;{{ opponent.handSize }}</span>
+              </div>
+            </div>
+          </div>
+          <div id="opponent">
+            <div class="magic scrollX">
+              <div class="scrollXCardContainer">
+                <div v-for="n in 5" class="card cardPlaceholder"></div>
+              </div>
+            </div>
+            <div class="monsters scrollX">
+              <div class="scrollXCardContainer">
+                <card
+                  v-for="card in opponent.monsters"
+                  key="card.id"
+                  :card="card"
+                  @onClick="selectCard(card, 'opponentMonster')"
+                />
+                <div v-for="n in (5 - opponent.monsters.length)" class="card cardPlaceholder"></div>
+              </div>
+            </div>
+          </div>
+          <hr />
+          <div id="me">
+            <div class="monsters scrollX">
+              <div class="scrollXCardContainer">
+                <card
+                  v-for="card in myPlayer.monsters"
+                  key="card.id"
+                  :card="card"
+                  @onClick="selectCard(card, 'myMonster')"
+                />
+                <div v-for="n in (5 - myPlayer.monsters.length)" class="card cardPlaceholder"></div>
+              </div>
+            </div>
+            <div class="magic scrollX">
+              <div class="scrollXCardContainer">
+                <div v-for="n in 5" class="card cardPlaceholder"></div>
+              </div>
+            </div>
+            <div class="hand scrollX">
+              <div class="scrollXCardContainer" v-bind:style="{width: myPlayer.hand.length * 12 + 'vh'}">
+                <card
+                  v-for="card in myPlayer.hand"
+                  key="card.id"
+                  :card="card"
+                  @onClick="selectCard(card, 'myHand')"
+                  :pulse="playersTurn === myPlayerId &&
+                      selectedCard === undefined &&
+                      !myPlayer.hasSummoned"
+                />
+              </div>
+            </div>
+          </div>
+          <div id="bottomBar" class="bar">
+            <div class="deck flexEven">
+              <div class="iconContainer">
+                <img src="../assets/deck.svg" alt="Deck:" class="icon"/>
+                <span class="iconTitle">x&nbsp;{{ myPlayer.deckSize }}</span>
+              </div>
+            </div>
+            <div class="shields">
+              <div class="iconContainer">
+                <img src="../assets/shield.svg" alt="Shields:" class="icon"/>
+                <span class="iconTitle">x&nbsp;{{ myPlayer.shieldsSize }}</span>
+              </div>
+            </div>
+            <div class="flexEven">
+              <div
+                v-if="!isLandscape"
+                v-on:click="showModal = !showModal; selectedCard = undefined;"
+                class="iconContainer right circle"
+                v-bind:class="hasAction"
+              >
+                <span id="actionIcon" class="unicodeIcon">
+                  &#9876;
+                </span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-else>
+      Invalid game status {{ this.gameStatus }}
+    </div>
   </div>
 </template>
 
@@ -372,6 +345,7 @@
       this.handleResize();
     },
     beforeDestroy() {
+      this.socket.disconnect();
       window.removeEventListener('resize', this.handleResize);
     },
     methods: {
