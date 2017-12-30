@@ -63,21 +63,17 @@
     props: {
       card: {
         type: Object,
-        required: true
-      },
-      cardField: {
-        type: String,
-        required: true
+        required: true,
       },
       pulse: {
         type: Boolean,
-        default: false
-      }
+        default: false,
+      },
     },
     methods: {
       onClick() {
         this.$emit('onClick');
-      }
-    }
+      },
+    },
   };
 </script>

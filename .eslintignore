@@ -1,2 +1,2 @@
-node_modules
-public
+build/*.js
+config/*.js

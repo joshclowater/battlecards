@@ -4,17 +4,18 @@ const uuid = require('uuid/v4');
 const deckUtils = require('./deck');
 
 // Game constants
-const numCardsOnGameStart = 5;
-const numShieldsOnGameStart = 3;
+const NUM_CARDS_ON_GAME_START = 5;
+const NUM_SHIELDS_ON_GAME_START = 3;
 
 // Games will be stored here with uuids as keys
 const games = {
-  gameWithPlayerWaiting: undefined
+  gameWithPlayerWaiting: undefined,
 };
 // Player's sockets stored here with uuids as keys
 const sockets = {};
 
 exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(io) {
+  console.log('>> Initialising battlekards io sockets');
   io.sockets.on('connection', (socket) => {
     let game;
     const playerId = uuid();
@@ -26,7 +27,7 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
       games[gameId] = {
         id: gameId,
         gameStarted: false,
-        players: {}
+        players: {},
       };
       game = games[gameId];
       game.players[playerId] = {
@@ -35,12 +36,12 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         hand: [],
         shields: [],
         monsters: [],
-        hasSummoned: false
+        hasSummoned: false,
       };
-      for (let i = 0; i < numCardsOnGameStart; i += 1) {
+      for (let i = 0; i < NUM_CARDS_ON_GAME_START; i += 1) {
         game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
       }
-      for (let i = 0; i < numShieldsOnGameStart; i += 1) {
+      for (let i = 0; i < NUM_SHIELDS_ON_GAME_START; i += 1) {
         game.players[playerId].shields.push(deckUtils.drawFrom(game.players[playerId].deck));
       }
 
@@ -56,12 +57,12 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         hand: [],
         shields: [],
         monsters: [],
-        hasSummoned: false
+        hasSummoned: false,
       };
-      for (let i = 0; i < numCardsOnGameStart; i += 1) {
+      for (let i = 0; i < NUM_CARDS_ON_GAME_START; i += 1) {
         game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
       }
-      for (let i = 0; i < numShieldsOnGameStart; i += 1) {
+      for (let i = 0; i < NUM_SHIELDS_ON_GAME_START; i += 1) {
         game.players[playerId].shields.push(deckUtils.drawFrom(game.players[playerId].deck));
       }
 
@@ -89,9 +90,10 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         game.inactivePlayer = game.playersTurn;
         game.playersTurn = playersTurn;
         // Set status of attack monsters
-        game.players[game.playersTurn].monsters = game.players[game.playersTurn].monsters.map(monster =>
-          Object.assign(monster, { canAttack: true })
-        );
+        game.players[game.playersTurn].monsters =
+          game.players[game.playersTurn].monsters.map(monster => (
+            Object.assign(monster, { canAttack: true })
+          ));
         // Allow for summon
         game.players[game.playersTurn].hasSummoned = false;
         // Active player draw card
@@ -101,12 +103,12 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         sockets[game.playersTurn].emit('turnEnded', {
           playersTurn: game.playersTurn,
           cardDrawn,
-          myDeckSize: game.players[game.playersTurn].deck.length
+          myDeckSize: game.players[game.playersTurn].deck.length,
         });
         sockets[game.inactivePlayer].emit('turnEnded', {
           playersTurn: game.playersTurn,
           opponentsHandSize: game.players[game.playersTurn].hand.length,
-          opponentsDeckSize: game.players[game.playersTurn].deck.length
+          opponentsDeckSize: game.players[game.playersTurn].deck.length,
         });
       } else {
         socket.emit('invalidMove', 'Not your turn');
@@ -114,10 +116,12 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
     });
 
     socket.on('summon', (cardId) => {
-      if (game.gameStarted && game.playersTurn === playerId && !game.players[playerId].hasSummoned) {
-        const monsterIndex = game.players[game.playersTurn].hand.findIndex(cardInHand =>
+      if (game.gameStarted &&
+          game.playersTurn === playerId &&
+          !game.players[playerId].hasSummoned) {
+        const monsterIndex = game.players[game.playersTurn].hand.findIndex(cardInHand => (
           cardInHand.id === cardId
-        );
+        ));
         if (monsterIndex !== -1) {
           const monster = _.cloneDeep(game.players[game.playersTurn].hand[monsterIndex]);
           monster.canAttack = false;
@@ -129,7 +133,7 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
           socket.emit('summoned', monster);
           sockets[game.inactivePlayer].emit('opponentSummoned', {
             monster,
-            opponentsHandSize: game.players[game.playersTurn].hand.length
+            opponentsHandSize: game.players[game.playersTurn].hand.length,
           });
         } else {
           socket.emit('invalidMove', 'card not in hand');
@@ -143,9 +147,9 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
 
     socket.on('attack', (attackingMonsterId, target) => {
       if (game.gameStarted && game.playersTurn === playerId) {
-        const attackingMonster = game.players[game.playersTurn].monsters.find(cardInHand =>
+        const attackingMonster = game.players[game.playersTurn].monsters.find(cardInHand => (
           cardInHand.id === attackingMonsterId
-        );
+        ));
         if (attackingMonster !== undefined) {
           if (attackingMonster.canAttack) {
             if (target === 'shield' && game.players[game.inactivePlayer].shields.length > 0) {
@@ -166,28 +170,34 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
               delete sockets[game.inactivePlayer];
               delete games[game.id];
             } else {
-              const targetMonster = _.cloneDeep(game.players[game.inactivePlayer].monsters.find(opponentMonster =>
-                opponentMonster.id === target
+              const targetMonster = _.cloneDeep((
+                game.players[game.inactivePlayer].monsters.find(opponentMonster => (
+                  opponentMonster.id === target
+                ))
               ));
               const destroyedMonsters = [];
               if (targetMonster !== undefined) {
                 if (targetMonster.attributes.attack < attackingMonster.attributes.attack) {
-                  game.players[game.inactivePlayer].monsters = game.players[game.inactivePlayer].monsters.filter(monster =>
-                    monster.id !== target
-                  );
+                  game.players[game.inactivePlayer].monsters =
+                    game.players[game.inactivePlayer].monsters.filter(monster => (
+                      monster.id !== target
+                    ));
                   destroyedMonsters.push(target);
                 } else if (targetMonster.attributes.attack > attackingMonster.attributes.attack) {
-                  game.players[game.playersTurn].monsters = game.players[game.playersTurn].monsters.filter(monster =>
-                    monster.id !== attackingMonster.id
-                  );
+                  game.players[game.playersTurn].monsters =
+                    game.players[game.playersTurn].monsters.filter(monster => (
+                      monster.id !== attackingMonster.id
+                    ));
                   destroyedMonsters.push(attackingMonsterId);
                 } else {
-                  game.players[game.inactivePlayer].monsters = game.players[game.inactivePlayer].monsters.filter(monster =>
-                    monster.id !== target
-                  );
-                  game.players[game.playersTurn].monsters = game.players[game.playersTurn].monsters.filter(monster =>
-                    monster.id !== attackingMonster.id
-                  );
+                  game.players[game.inactivePlayer].monsters =
+                    game.players[game.inactivePlayer].monsters.filter(monster => (
+                      monster.id !== target
+                    ));
+                  game.players[game.playersTurn].monsters =
+                    game.players[game.playersTurn].monsters.filter(monster => (
+                      monster.id !== attackingMonster.id
+                    ));
                   destroyedMonsters.push(target);
                   destroyedMonsters.push(attackingMonsterId);
                 }
@@ -218,9 +228,9 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         games.gameWithPlayerWaiting = undefined;
         console.log('killed 1P game. sockets:', Object.keys(sockets).length, 'games:', Object.keys(games).length - 1);
       } else if (games[game.id] && games[game.id].gameOver !== true) {
-        const otherPlayerId = Object.keys(game.players).find(gamePlayerId =>
+        const otherPlayerId = Object.keys(game.players).find(gamePlayerId => (
           gamePlayerId !== playerId
-        );
+        ));
         sockets[otherPlayerId].emit('win', 'Other player left');
         games[game.id].gameOver = true;
         sockets[otherPlayerId].disconnect(true);
@@ -242,6 +252,6 @@ function createGameToSend(game, me, otherPlayer) {
     myHand: game.players[me].hand,
     opponentsDeckSize: game.players[otherPlayer].deck.length,
     opponentsShieldsSize: game.players[otherPlayer].shields.length,
-    opponentsHandSize: game.players[otherPlayer].hand.length
+    opponentsHandSize: game.players[otherPlayer].hand.length,
   };
 }

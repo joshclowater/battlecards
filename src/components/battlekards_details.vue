@@ -62,7 +62,7 @@
           v-for="opponentMonster in opponentsMonsters"
           v-on:click="attackMonster(opponentMonster.id)"
         >
-          Attak {{ opponentMonster.name }}
+          Attak {{ opponentMonster.name }} (Atk: {{ opponentMonster.attributes.attack }}, Def: {{ opponentMonster.attributes.defense }})
         </button>
       </div>
     </div>
@@ -90,31 +90,31 @@
     props: {
       myPlayerId: {
         type: String,
-        required: true
+        required: true,
       },
       playersTurn: {
         type: String,
-        required: true
+        required: true,
       },
       selectedCard: {
-        type: Object
+        type: Object,
       },
       hasSummoned: {
         type: Boolean,
-        required: true
+        required: true,
       },
       opponentsShieldsSize: {
         type: Number,
-        required: true
+        required: true,
       },
       opponentsMonsters: {
         type: Array,
-        required: true
+        required: true,
       },
       socket: {
         type: Object,
-        required: true
-      }
+        required: true,
+      },
     },
     methods: {
       endTurn() {
@@ -144,8 +144,8 @@
 
       endTurnButtonClass() {
         return this.myPlayerId === this.playersTurn && this.hasSummoned ? 'pulse' : '';
-      }
-    }
+      },
+    },
   };
 
 </script>
