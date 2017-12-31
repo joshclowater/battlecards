@@ -32,7 +32,7 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
       game = games[gameId];
       game.players[playerId] = {
         playerId,
-        deck: _.cloneDeep(deckUtils.deck),
+        deck: deckUtils.createDeck(),
         hand: [],
         shields: [],
         monsters: [],
@@ -53,7 +53,7 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
       games.gameWithPlayerWaiting = undefined;
       game.players[playerId] = {
         playerId,
-        deck: _.cloneDeep(deckUtils.deck),
+        deck: deckUtils.createDeck(),
         hand: [],
         shields: [],
         monsters: [],

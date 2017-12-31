@@ -239,7 +239,7 @@
               <div class="scrollXCardContainer">
                 <card
                   v-for="card in opponent.monsters"
-                  key="card.id"
+                  :key="card.id"
                   :card="card"
                   @onClick="selectCard(card, 'opponentMonster')"
                 />
@@ -253,7 +253,7 @@
               <div class="scrollXCardContainer">
                 <card
                   v-for="card in myPlayer.monsters"
-                  key="card.id"
+                  :key="card.id"
                   :card="card"
                   @onClick="selectCard(card, 'myMonster')"
                 />
@@ -269,7 +269,7 @@
               <div class="scrollXCardContainer" v-bind:style="{width: myPlayer.hand.length * 12 + 'vh'}">
                 <card
                   v-for="card in myPlayer.hand"
-                  key="card.id"
+                  :key="card.id"
                   :card="card"
                   @onClick="selectCard(card, 'myHand')"
                   :pulse="playersTurn === myPlayerId &&
