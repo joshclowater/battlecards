@@ -181,32 +181,16 @@
     <div v-else-if="gameStatus === 'playing'">
       <div id="gameContainer">
         <div id="details" v-if="isLandscape">
-          <div id="modalClose" v-if="selectedCard !== undefined" v-on:click="selectedCard = undefined;">
+          <div id="modalClose" v-if="hasSelectedCard" v-on:click="setSelectedCard(undefined);">
             &#10005;
           </div>
-          <battle-kards-details
-            :myPlayerId="myPlayerId"
-            :playersTurn="playersTurn"
-            :selectedCard="selectedCard"
-            :hasSummoned="myPlayer.hasSummoned"
-            :opponentsShieldsSize="opponent.shieldsSize"
-            :opponentsMonsters="opponent.monsters"
-            :socket="socket"
-          />
+          <battle-kards-details />
         </div>
-        <div id="detailsModal" v-if="!isLandscape" v-show="showModal || selectedCard !== undefined" >
-          <div id="modalClose" v-on:click="showModal = false; selectedCard = undefined;">
+        <div id="detailsModal" v-if="!isLandscape" v-show="showModal || hasSelectedCard" >
+          <div id="modalClose" v-on:click="setShowModal(false); setSelectedCard(undefined);">
             &#10005;
           </div>
-          <battle-kards-details
-            :myPlayerId="myPlayerId"
-            :playersTurn="playersTurn"
-            :selectedCard="selectedCard"
-            :hasSummoned="myPlayer.hasSummoned"
-            :opponentsShieldsSize="opponent.shieldsSize"
-            :opponentsMonsters="opponent.monsters"
-            :socket="socket"
-          />
+          <battle-kards-details />
         </div>
         <div id="game">
           <div class="bar">
@@ -241,7 +225,7 @@
                   v-for="card in opponent.monsters"
                   :key="card.id"
                   :card="card"
-                  @onClick="selectCard(card, 'opponentMonster')"
+                  @onClick="setSelectedCard({ card, cardField: 'opponentMonster' })"
                 />
                 <div v-for="n in (5 - opponent.monsters.length)" class="card cardPlaceholder"></div>
               </div>
@@ -255,7 +239,7 @@
                   v-for="card in myPlayer.monsters"
                   :key="card.id"
                   :card="card"
-                  @onClick="selectCard(card, 'myMonster')"
+                  @onClick="setSelectedCard({ card, cardField: 'myMonster' })"
                 />
                 <div v-for="n in (5 - myPlayer.monsters.length)" class="card cardPlaceholder"></div>
               </div>
@@ -271,9 +255,9 @@
                   v-for="card in myPlayer.hand"
                   :key="card.id"
                   :card="card"
-                  @onClick="selectCard(card, 'myHand')"
-                  :pulse="playersTurn === myPlayerId &&
-                      selectedCard === undefined &&
+                  @onClick="setSelectedCard({ card, cardField: 'myHand' })"
+                  :pulse="isMyTurn &&
+                      !hasSelectedCard &&
                       !myPlayer.hasSummoned"
                 />
               </div>
@@ -295,7 +279,7 @@
             <div class="flexEven">
               <div
                 v-if="!isLandscape"
-                v-on:click="showModal = !showModal; selectedCard = undefined;"
+                v-on:click="setShowModal(true); setSelectedCard(undefined);"
                 class="iconContainer right circle"
                 v-bind:class="hasAction"
               >
@@ -315,7 +299,8 @@
 </template>
 
 <script>
-  import io from 'socket.io-client';
+  import { mapState, mapGetters, mapMutations, mapActions } from 'vuex';
+  import * as types from '../store/mutation-types';
   import BattleKardsDetails from './battlekards_details';
   import Card from './card';
 
@@ -325,160 +310,48 @@
       BattleKardsDetails,
       Card,
     },
-    data: () => ({
-      isLandscape: true,
-      socket: undefined,
-      showModal: false,
-      gameStatus: undefined,
-      myPlayerId: undefined,
-      playersTurn: undefined,
-      opponent: undefined,
-      myPlayer: undefined,
-      selectedCard: undefined,
-    }),
     beforeMount() {
-      this.socket = io();
-      this.initGameSocket();
-      console.log('Game socket initiated');
-
+      this.initiateGame();
       window.addEventListener('resize', this.handleResize);
       this.handleResize();
     },
     beforeDestroy() {
-      this.socket.disconnect();
+      this.disconnectFromGame();
       window.removeEventListener('resize', this.handleResize);
     },
     methods: {
+      ...mapMutations({
+        setIsLandscape: types.SET_IS_LANDSCAPE,
+        setSelectedCard: types.SET_SELECTED_CARD,
+      }),
+      ...mapActions([
+        'initiateGame',
+        'terminateGame',
+      ]),
       handleResize() {
-        this.isLandscape = window.innerWidth > window.innerHeight;
-      },
-      initGameSocket() {
-        this.socket.on('waitingForAnotherPlayer', () => {
-          console.log('waitingForAnotherPlayer');
-          this.gameStatus = 'waitingForAnotherPlayer';
-        });
-
-        this.socket.on('gameStarted', (response) => {
-          console.log('gameStarted', response);
-          this.gameStatus = 'playing';
-          this.myPlayerId = response.playerId;
-          this.playersTurn = response.playersTurn;
-          this.opponent = {
-            deckSize: response.opponentsDeckSize,
-            shieldsSize: response.opponentsShieldsSize,
-            handSize: response.opponentsHandSize,
-            monsters: [],
-          };
-          this.myPlayer = {
-            deckSize: response.myDeckSize,
-            shieldsSize: response.myShieldsSize,
-            hand: response.myHand,
-            monsters: [],
-            hasSummoned: false,
-          };
-        });
-
-        this.socket.on('turnEnded', (response) => {
-          console.log('turnEnded', response);
-          this.playersTurn = response.playersTurn;
-          if (this.playersTurn === this.myPlayerId) {
-            this.myPlayer.hand.push(response.cardDrawn);
-            this.myPlayer.deckSize = response.myDeckSize;
-            this.myPlayer.hasSummoned = false;
-            this.myPlayer.monsters = this.myPlayer.monsters.map(monster => (
-              Object.assign(monster, { canAttack: true })
-            ));
-          } else {
-            this.opponent.handSize = response.opponentsHandSize;
-            this.opponent.deckSize = response.opponentsDeckSize;
-          }
-        });
-
-        this.socket.on('summoned', (card) => {
-          console.log('Summoned: ', card);
-
-          const monsterIndex = this.myPlayer.hand.findIndex(cardInHand => (
-            cardInHand.id === card.id
-          ));
-          this.myPlayer.hand.splice(monsterIndex, 1);
-          this.myPlayer.monsters.push(card);
-          this.myPlayer.hasSummoned = true;
-
-          this.selectedCard = undefined;
-        });
-
-        this.socket.on('opponentSummoned', (response) => {
-          console.log('Opponent summoned: ', response);
-          this.opponent.monsters.push(response.monster);
-          this.opponent.handSize = response.opponentsHandSize;
-        });
-
-        this.socket.on('attacked', (attackingMonsterId, target, results) => {
-          console.log('attacked', attackingMonsterId, target, results);
-          const myMonster = this.myPlayer.monsters.find(cardInHand => (
-            cardInHand.id === attackingMonsterId
-          ));
-          myMonster.canAttack = false;
-          if (target === 'shield') {
-            this.opponent.shieldsSize -= 1;
-          } else {
-            results.destroyedMonsters.forEach((destroyedMonsterId) => {
-              this.myPlayer.monsters = this.myPlayer.monsters.filter(monster => (
-                monster.id !== destroyedMonsterId
-              ));
-              this.opponent.monsters = this.opponent.monsters.filter(monster => (
-                (monster.id !== destroyedMonsterId)
-              ));
-            });
-          }
-          this.selectedCard = undefined;
-        });
-
-        this.socket.on('opponentAttacked', (attackingMonsterId, target, results) => {
-          console.log('opponentAttacked', attackingMonsterId, target, results);
-          if (target === 'shield') {
-            this.myPlayer.shieldsSize -= 1;
-            this.myPlayer.hand.push(results.shield);
-          } else {
-            results.destroyedMonsters.forEach((destroyedMonsterId) => {
-              this.myPlayer.monsters = this.myPlayer.monsters.filter(monster => (
-                monster.id !== destroyedMonsterId
-              ));
-              this.opponent.monsters = this.opponent.monsters.filter(monster => (
-                monster.id !== destroyedMonsterId
-              ));
-            });
-          }
-        });
-
-        this.socket.on('win', (message) => {
-          console.log('win', message);
-          this.gameStatus = 'gameOver';
-
-          // TODO Use modal instead of alert
-          alert(`You won! ${message}`); // eslint-disable-line no-alert
-        });
-
-        this.socket.on('lose', (message) => {
-          console.log('lose', message);
-          this.gameStatus = 'gameOver';
-
-          // TODO Use modal instead of alert
-          alert(`You lost! ${message}`); // eslint-disable-line no-alert
-        });
-
-        this.socket.on('invalidMove', (message) => {
-          console.warn('Invalid move:', message);
-        });
-      },
-      selectCard(card, cardField) {
-        this.selectedCard = { card, cardField };
+        const isLandscape = window.innerWidth > window.innerHeight;
+        if (this.isLandscape !== isLandscape) {
+          this.setIsLandscape(isLandscape);
+        }
       },
     },
     computed: {
+      ...mapState([
+        'isLandscape',
+        'gameStatus',
+        'myPlayer',
+        'opponent',
+        'selectedCard',
+        'showModal',
+      ]),
+      ...mapGetters([
+        'isMyTurn',
+        'hasSelectedCard',
+      ]),
       hasAction() {
+        // TODO use getter for this
         return {
-          pulse: this.playersTurn === this.myPlayerId &&
+          pulse: this.isMyTurn &&
               !this.showModal &&
               this.myPlayer.hasSummoned,
         };

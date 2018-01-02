@@ -100,13 +100,11 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         const cardDrawn = deckUtils.drawFrom(game.players[game.playersTurn].deck);
         game.players[game.playersTurn].hand.push(cardDrawn);
 
-        sockets[game.playersTurn].emit('turnEnded', {
-          playersTurn: game.playersTurn,
+        sockets[game.playersTurn].emit('opponentTurnEnded', {
           cardDrawn,
           myDeckSize: game.players[game.playersTurn].deck.length,
         });
         sockets[game.inactivePlayer].emit('turnEnded', {
-          playersTurn: game.playersTurn,
           opponentsHandSize: game.players[game.playersTurn].hand.length,
           opponentsDeckSize: game.players[game.playersTurn].deck.length,
         });
@@ -250,6 +248,7 @@ function createGameToSend(game, me, otherPlayer) {
     myDeckSize: game.players[me].deck.length,
     myShieldsSize: game.players[me].shields.length,
     myHand: game.players[me].hand,
+    opponentId: otherPlayer,
     opponentsDeckSize: game.players[otherPlayer].deck.length,
     opponentsShieldsSize: game.players[otherPlayer].shields.length,
     opponentsHandSize: game.players[otherPlayer].hand.length,

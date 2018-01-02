@@ -1,5 +1,5 @@
 {
-  "version": "0.2.1",
+  "version": "0.2.2",
   "name": "battlecards",
   "description": "Two player battle card game",
   "author": "Josh Clowater <josh.clowater@gmail.com>",
@@ -69,6 +69,7 @@
     "vue-router": "^3.0.1",
     "vue-style-loader": "^3.0.3",
     "vue-template-compiler": "^2.5.13",
+    "vuex": "^3.0.1",
     "webpack": "^2.7.0",
     "webpack-bundle-analyzer": "^2.9.1",
     "webpack-merge": "^4.1.1"
@@ -82,6 +83,7 @@
     "cross-env": "^4.0.0",
     "cross-spawn": "^5.0.1",
     "eventsource-polyfill": "^0.9.6",
+    "es6-promise": "^4.2.2",
     "file-loader": "^0.11.1",
     "http-proxy-middleware": "^0.17.3",
     "inject-loader": "^3.0.1",

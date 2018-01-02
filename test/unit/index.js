@@ -1,3 +1,4 @@
+import 'es6-promise/auto'; // https://github.com/vuejs-templates/webpack/issues/474
 import Vue from 'vue';
 
 Vue.config.productionTip = false;
