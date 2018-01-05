@@ -1,5 +1,5 @@
 import Vue from 'vue';
-import Card from '@/components/card';
+import Card from '@/client/components/card';
 
 describe('Card.vue', () => {
   it('should render correct contents', () => {

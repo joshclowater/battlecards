@@ -37,13 +37,13 @@
         Def: {{ selectedCard.card.attributes.defense }}
       </span>
       <button
-        v-if="myPlayerId === playersTurn && selectedCard.cardField === 'myHand' && !hasSummoned"
+        v-if="isMyTurn && selectedCard.cardField === 'myHand' && !myPlayerHasSummoned"
         id="summonButton"
         v-on:click="summon"
       >
         Summon Attak
       </button>
-      <div v-else-if="myPlayerId === playersTurn && selectedCard.cardField === 'myMonster' && selectedCard.card.canAttack">
+      <div v-else-if="isMyTurn && selectedCard.cardField === 'myMonster' && selectedCard.card.canAttack">
         <button
           v-if="opponentsShieldsSize > 0"
           id="attackShieldButton"
@@ -68,17 +68,17 @@
     </div>
     <div v-else >
       <span class="message">
-        <span v-if="myPlayerId === playersTurn && !hasSummoned">
+        <span v-if="isMyTurn && !myPlayerHasSummoned">
           It is currently your turn. You may summon a monster. Once you are finished, you may end your turn.
         </span>
-        <span v-else-if="myPlayerId === playersTurn">
+        <span v-else-if="isMyTurn">
           You have summoned a monster. You may end your turn.
         </span>
         <span v-else>
           It is currently the other players turn.
         </span>
       </span>
-      <button id="endTurnButton" v-if="myPlayerId === playersTurn" v-on:click="endTurn" v-bind:class="endTurnButtonClass()">
+      <button id="endTurnButton" v-if="isMyTurn" v-on:click="endTurn" v-bind:class="endTurnButtonClass()">
         End turn
       </button>
     </div>
@@ -86,64 +86,48 @@
 </template>
 
 <script>
+  import { mapState, mapGetters } from 'vuex';
+
   export default {
-    props: {
-      myPlayerId: {
-        type: String,
-        required: true,
-      },
-      playersTurn: {
-        type: String,
-        required: true,
-      },
-      selectedCard: {
-        type: Object,
-      },
-      hasSummoned: {
-        type: Boolean,
-        required: true,
-      },
-      opponentsShieldsSize: {
-        type: Number,
-        required: true,
-      },
-      opponentsMonsters: {
-        type: Array,
-        required: true,
-      },
-      socket: {
-        type: Object,
-        required: true,
-      },
+    computed: {
+      ...mapState([
+        'selectedCard',
+      ]),
+      ...mapGetters([
+        'isMyTurn',
+        'myPlayerHasSummoned',
+        'opponentsShieldsSize',
+        'opponentsMonsters',
+      ]),
     },
     methods: {
       endTurn() {
         console.log('endTurn()');
-        this.socket.emit('endTurn');
+        window.battlekardsSocket.emit('endTurn');
       },
 
       summon() {
         console.log('summon()', this.selectedCard.card.id);
-        this.socket.emit('summon', this.selectedCard.card.id);
+        window.battlekardsSocket.emit('summon', this.selectedCard.card.id);
       },
 
       attackShield() {
         console.log('attack', this.selectedCard.card.id, 'shield');
-        this.socket.emit('attack', this.selectedCard.card.id, 'shield');
+        window.battlekardsSocket.emit('attack', this.selectedCard.card.id, 'shield');
       },
 
       attackOpponent() {
         console.log('attack', this.selectedCard.card.id, 'player');
-        this.socket.emit('attack', this.selectedCard.card.id, 'player');
+        window.battlekardsSocket.emit('attack', this.selectedCard.card.id, 'player');
       },
 
       attackMonster(opponentMonsterId) {
         console.log('attack', this.selectedCard.card.id, opponentMonsterId);
-        this.socket.emit('attack', this.selectedCard.card.id, opponentMonsterId);
+        window.battlekardsSocket.emit('attack', this.selectedCard.card.id, opponentMonsterId);
       },
 
       endTurnButtonClass() {
-        return this.myPlayerId === this.playersTurn && this.hasSummoned ? 'pulse' : '';
+        return this.isMyTurn && this.myPlayerHasSummoned ? 'pulse' : '';
       },
     },
   };

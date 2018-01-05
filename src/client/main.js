@@ -3,6 +3,7 @@ import VueRouter from 'vue-router';
 import Battlekards from './components/battlekards';
 import Home from './components/home';
 import PageNotFound from './components/pagenotfound';
+import store from './store';
 
 Vue.use(VueRouter);
 Vue.config.productionTip = false;
@@ -20,4 +21,5 @@ const router = new VueRouter({
 /* eslint-disable-next-line no-new */
 new Vue({
   router,
+  store,
 }).$mount('#app');
