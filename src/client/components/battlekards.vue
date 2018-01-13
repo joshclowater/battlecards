@@ -10,6 +10,11 @@
     height: 100vh;
   }
 
+  #gameOverMessage {
+    text-align: center;
+    margin-bottom: 20px;
+  }
+
   #gameContainer {
     display: flex;
   }
@@ -155,23 +160,31 @@
 
 <template>
   <div id="battlekards">
-    <div v-if='gameStatus === undefined'>
+    <div v-if="gameStatus === undefined">
       <div class="centerWindow">
         <span>
           Connecting to server...
         </span>
       </div>
     </div>
-    <div v-else-if='gameStatus === "waitingForAnotherPlayer"'>
+    <div v-else-if="gameStatus === 'waitingForAnotherPlayer'">
       <div class="centerWindow">
         <span>
           Waiting for another player to join...
         </span>
       </div>
     </div>
-    <div v-else-if="gameStatus === 'gameOver'">
+    <div v-else-if="gameStatus.includes('gameOver')">
       <div class="centerWindow">
         <span>
+          <div id="gameOverMessage">
+            <div v-if="gameStatus === 'gameOverWin'">
+              You won!
+            </div>
+            <div v-if="gameStatus === 'gameOverLose'">
+              You lost...
+            </div>
+          </div>
           <button onclick="window.location.reload(true);">
             Play again?
           </button>

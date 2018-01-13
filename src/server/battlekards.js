@@ -160,8 +160,8 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
             } else if (target === 'player' && game.players[game.inactivePlayer].shields.length === 0) {
               // End game
               games[game.id].gameOver = true;
-              socket.emit('win', 'Destroyed opponent');
-              sockets[game.inactivePlayer].emit('lose', 'You were detroyed');
+              socket.emit('win');
+              sockets[game.inactivePlayer].emit('lose');
               socket.disconnect(true);
               delete sockets[playerId];
               sockets[game.inactivePlayer].disconnect(true);
