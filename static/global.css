@@ -28,3 +28,7 @@ button:hover {
 button:active {
   background-color: #8aa8c1;
 }
+
+span {
+  cursor: default;
+}
