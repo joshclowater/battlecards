@@ -45,20 +45,14 @@ export const initiateGame = ({ commit }) => {
       commit(types.OPPONENT_ATTACKED, { attackingMonsterId, target, results });
     });
 
-    socket.on('win', (message) => {
-      console.log('win', message);
-      commit(types.SET_GAME_STATUS, 'gameOver');
-
-      // TODO Use modal instead of alert
-      alert(`You won! ${message}`); // eslint-disable-line no-alert
+    socket.on('win', () => {
+      console.log('win');
+      commit(types.SET_GAME_STATUS, 'gameOverWin');
     });
 
-    socket.on('lose', (message) => {
-      console.log('lose', message);
-      commit(types.SET_GAME_STATUS, 'gameOver');
-
-      // TODO Use modal instead of alert
-      alert(`You lost! ${message}`); // eslint-disable-line no-alert
+    socket.on('lose', () => {
+      console.log('lose');
+      commit(types.SET_GAME_STATUS, 'gameOverLose');
     });
 
     socket.on('invalidMove', (message) => {
