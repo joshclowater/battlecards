@@ -18,7 +18,7 @@ const createWrapperWithStore = store =>
     localVue,
   });
 
-describe('Battlekards', () => {
+describe('battlekards', () => {
   it('renders correctly when gameStatus is undefined', () => {
     const wrapper = createWrapperWithStore({
       state: {

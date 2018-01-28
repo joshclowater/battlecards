@@ -22,6 +22,11 @@
     display: block;
     margin: 2vh auto 0;
   }
+
+  li {
+    text-align: left;
+    padding-bottom: 1vh;
+  }
 </style>
 
 <template>
@@ -80,21 +85,32 @@
         </button>
       </div>
     </div>
-    <div v-else >
-      <span class="message">
-        <span v-if="isMyTurn && !myPlayerHasSummoned">
-          It is currently your turn. You may summon a monster. Once you are finished, you may end your turn.
+    <div v-else class="message">
+      <div v-if="isMyTurn">
+        <span>
+          It is currently your turn. You may:
         </span>
-        <span v-else-if="isMyTurn">
-          You have summoned a monster. You may end your turn.
-        </span>
-        <span v-else>
-          It is currently the other players turn.
-        </span>
+        <ul>
+          <li v-if="!myPlayerHasSummoned">
+            <span>Summon a monster</span>
+          </li>
+          <li v-if="myPlayerHasTrapInHand">
+            <span>Set a trap</span>
+          </li>
+          <li v-if="myPlayerHasAttackMonster">
+            <span>Attack with monster</span>
+          </li>
+          <li>
+            <span>End your turn</span>
+          </li>
+        </ul>
+        <button id="endTurnButton" v-if="isMyTurn" v-on:click="endTurn" v-bind:class="endTurnButtonClass()">
+          End turn
+        </button>
+      </div>
+      <span v-else>
+        It is currently the other players turn.
       </span>
-      <button id="endTurnButton" v-if="isMyTurn" v-on:click="endTurn" v-bind:class="endTurnButtonClass()">
-        End turn
-      </button>
     </div>
   </div>
 </template>
@@ -109,9 +125,11 @@
       ]),
       ...mapGetters([
         'isMyTurn',
-        'myPlayerHasSummoned',
         'opponentsShieldsSize',
         'opponentsMonsters',
+        'myPlayerHasSummoned',
+        'myPlayerHasTrapInHand',
+        'myPlayerHasAttackMonster',
       ]),
     },
     methods: {
