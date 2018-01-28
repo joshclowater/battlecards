@@ -20,6 +20,7 @@ export default {
       shieldsSize: response.opponentsShieldsSize,
       handSize: response.opponentsHandSize,
       monsters: [],
+      trapsSize: 0,
     };
     state.myPlayer = {
       playerId: response.playerId,
@@ -27,6 +28,7 @@ export default {
       shieldsSize: response.myShieldsSize,
       hand: response.myHand,
       monsters: [],
+      traps: [],
       hasSummoned: false,
     };
   },
@@ -97,6 +99,21 @@ export default {
         ));
       });
     }
+  },
+
+  [types.TRAP_SET](state, trap) {
+    const monsterIndex = state.myPlayer.hand.findIndex(cardInHand => (
+      cardInHand.id === trap.id
+    ));
+    state.myPlayer.hand.splice(monsterIndex, 1);
+    state.myPlayer.traps.push(trap);
+
+    state.selectedCard = undefined;
+  },
+
+  [types.OPPONENT_TRAP_SET](state) {
+    state.opponent.trapsSize += 1;
+    state.opponent.handSize -= 1;
   },
 
   [types.SET_SELECTED_CARD](state, selectedCard) {

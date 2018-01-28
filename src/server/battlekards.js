@@ -36,6 +36,7 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         hand: [],
         shields: [],
         monsters: [],
+        traps: [],
         hasSummoned: false,
       };
       for (let i = 0; i < NUM_CARDS_ON_GAME_START; i += 1) {
@@ -57,6 +58,7 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         hand: [],
         shields: [],
         monsters: [],
+        traps: [],
         hasSummoned: false,
       };
       for (let i = 0; i < NUM_CARDS_ON_GAME_START; i += 1) {
@@ -122,17 +124,21 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         ));
         if (monsterIndex !== -1) {
           const monster = _.cloneDeep(game.players[game.playersTurn].hand[monsterIndex]);
-          monster.canAttack = false;
+          if (monster.type === 'monster') {
+            monster.canAttack = false;
 
-          game.players[playerId].hasSummoned = true; // Player cannot summon again
-          game.players[game.playersTurn].hand.splice(monsterIndex, 1);
-          game.players[game.playersTurn].monsters.push(monster);
+            game.players[playerId].hasSummoned = true; // Player cannot summon again
+            game.players[game.playersTurn].hand.splice(monsterIndex, 1);
+            game.players[game.playersTurn].monsters.push(monster);
 
-          socket.emit('summoned', monster);
-          sockets[game.inactivePlayer].emit('opponentSummoned', {
-            monster,
-            opponentsHandSize: game.players[game.playersTurn].hand.length,
-          });
+            socket.emit('summoned', monster);
+            sockets[game.inactivePlayer].emit('opponentSummoned', {
+              monster,
+              opponentsHandSize: game.players[game.playersTurn].hand.length,
+            });
+          } else {
+            socket.emit('invalidMove', 'card is not monster');
+          }
         } else {
           socket.emit('invalidMove', 'card not in hand');
         }
@@ -140,6 +146,31 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         socket.emit('invalidMove', 'not your turn');
       } else {
         socket.emit('invalidMove', 'you already summoned');
+      }
+    });
+
+    socket.on('setTrap', (cardId) => {
+      if (game.gameStarted &&
+          game.playersTurn === playerId) {
+        const cardIndex = game.players[game.playersTurn].hand.findIndex(cardInHand => (
+          cardInHand.id === cardId
+        ));
+        if (cardIndex !== -1) {
+          const trap = _.cloneDeep(game.players[game.playersTurn].hand[cardIndex]);
+          if (trap.type === 'trap') {
+            game.players[game.playersTurn].hand.splice(cardIndex, 1);
+            game.players[game.playersTurn].traps.push(trap);
+
+            socket.emit('trapSet', trap);
+            sockets[game.inactivePlayer].emit('opponentTrapSet');
+          } else {
+            socket.emit('invalidMove', 'card is not trap');
+          }
+        } else {
+          socket.emit('invalidMove', 'card not in hand');
+        }
+      } else {
+        socket.emit('invalidMove', 'not your turn');
       }
     });
 

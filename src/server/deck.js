@@ -5,6 +5,12 @@ exports.createDeck = function createDeck() {
   return [
     {
       id: uuid(),
+      name: 'Fake trap',
+      type: 'trap',
+      effects: [],
+      description: 'Does nothing. Just a decoy.',
+    }, {
+      id: uuid(),
       name: 'The little cornpop that could',
       type: 'monster',
       attributes: {
