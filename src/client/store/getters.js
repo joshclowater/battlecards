@@ -16,3 +16,23 @@ export const opponentsShieldsSize = state =>
 export const opponentsMonsters = state =>
   state.opponent !== undefined &&
   state.opponent.monsters;
+
+export const myPlayerHasTrapInHand = state =>
+  state.myPlayer !== undefined &&
+  state.myPlayer.hand.find(card => (
+    card.type === 'trap'
+  )) !== undefined;
+
+export const myPlayerHasAttackMonster = state =>
+  state.myPlayer !== undefined &&
+  state.myPlayer.monsters.find(monster => (
+    monster.canAttack
+  )) !== undefined;
+
+export const selectedCardId = (state) => {
+  if (state.selectedCard !== undefined &&
+      state.selectedCard.card !== undefined) {
+    return state.selectedCard.card.id;
+  }
+  return undefined;
+};

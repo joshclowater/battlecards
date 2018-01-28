@@ -198,7 +198,7 @@
               v-for="card in opponent.monsters"
               :key="card.id"
               :card="card"
-              @onClick="setSelectedCard({ card, cardField: 'opponentMonster' })"
+              cardField="opponentMonster"
             />
             <div v-for="n in (5 - opponent.monsters.length)" class="card cardPlaceholder"></div>
           </div>
@@ -212,7 +212,7 @@
               v-for="card in myPlayer.monsters"
               :key="card.id"
               :card="card"
-              @onClick="setSelectedCard({ card, cardField: 'myMonster' })"
+              cardField="myMonster"
             />
             <div v-for="n in (5 - myPlayer.monsters.length)" class="card cardPlaceholder"></div>
           </div>
@@ -234,10 +234,7 @@
               v-for="card in myPlayer.hand"
               :key="card.id"
               :card="card"
-              @onClick="setSelectedCard({ card, cardField: 'myHand' })"
-              :pulse="isMyTurn &&
-                  !hasSelectedCard &&
-                  !myPlayer.hasSummoned"
+              cardField="myHand"
             />
           </div>
         </div>
