@@ -30,39 +30,53 @@
       <span class="cardDetailsText">
         {{ selectedCard.card.name }}
       </span>
-      <span class="cardDetailsText">
-        Atk: {{ selectedCard.card.attributes.attack }}
-      </span>
-      <span class="cardDetailsText">
-        Def: {{ selectedCard.card.attributes.defense }}
-      </span>
-      <button
-        v-if="isMyTurn && selectedCard.cardField === 'myHand' && !myPlayerHasSummoned"
-        id="summonButton"
-        v-on:click="summon"
-      >
-        Summon Attak
-      </button>
-      <div v-else-if="isMyTurn && selectedCard.cardField === 'myMonster' && selectedCard.card.canAttack">
+      <div v-if="selectedCard.card.type === 'monster'">
+        <span class="cardDetailsText">
+          Atk: {{ selectedCard.card.attributes.attack }}
+        </span>
+        <span class="cardDetailsText">
+          Def: {{ selectedCard.card.attributes.defense }}
+        </span>
         <button
-          v-if="opponentsShieldsSize > 0"
-          id="attackShieldButton"
-          v-on:click="attackShield"
+          v-if="isMyTurn && selectedCard.cardField === 'myHand' && !myPlayerHasSummoned"
+          id="summonButton"
+          v-on:click="summon"
         >
-          Attak Shield
+          Summon Attak
         </button>
+        <div v-else-if="isMyTurn && selectedCard.cardField === 'myMonster' && selectedCard.card.canAttack">
+          <button
+            v-if="opponentsShieldsSize > 0"
+            id="attackShieldButton"
+            v-on:click="attackShield"
+          >
+            Attak Shield
+          </button>
+          <button
+            v-else
+            id="attackOpponentButton"
+            v-on:click="attackOpponent"
+          >
+            Attak Opponent
+          </button>
+          <button
+            v-for="opponentMonster in opponentsMonsters"
+            v-on:click="attackMonster(opponentMonster.id)"
+          >
+            Attak {{ opponentMonster.name }} (Atk: {{ opponentMonster.attributes.attack }}, Def: {{ opponentMonster.attributes.defense }})
+          </button>
+        </div>
+      </div>
+      <div v-else-if="selectedCard.card.type === 'trap'">
+        <span class="cardDetailsText">
+          {{ selectedCard.card.description }}
+        </span>
         <button
-          v-else
-          id="attackOpponentButton"
-          v-on:click="attackOpponent"
+          v-if="isMyTurn && selectedCard.cardField === 'myHand'"
+          id="setTrap"
+          v-on:click="setTrap"
         >
-          Attak Opponent
-        </button>
-        <button
-          v-for="opponentMonster in opponentsMonsters"
-          v-on:click="attackMonster(opponentMonster.id)"
-        >
-          Attak {{ opponentMonster.name }} (Atk: {{ opponentMonster.attributes.attack }}, Def: {{ opponentMonster.attributes.defense }})
+          Set Trap
         </button>
       </div>
     </div>
@@ -124,6 +138,11 @@
       attackMonster(opponentMonsterId) {
         console.log('attack', this.selectedCard.card.id, opponentMonsterId);
         window.battlekardsSocket.emit('attack', this.selectedCard.card.id, opponentMonsterId);
+      },
+
+      setTrap() {
+        console.log('setTrap', this.selectedCard.card.id);
+        window.battlekardsSocket.emit('setTrap', this.selectedCard.card.id);
       },
 
       endTurnButtonClass() {

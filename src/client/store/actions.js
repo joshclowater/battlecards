@@ -45,6 +45,16 @@ export const initiateGame = ({ commit }) => {
       commit(types.OPPONENT_ATTACKED, { attackingMonsterId, target, results });
     });
 
+    socket.on('trapSet', (trap) => {
+      console.log('trapSet', trap);
+      commit(types.TRAP_SET, trap);
+    });
+
+    socket.on('opponentTrapSet', () => {
+      console.log('opponentTrapSet');
+      commit(types.OPPONENT_TRAP_SET);
+    });
+
     socket.on('win', () => {
       console.log('win');
       commit(types.SET_GAME_STATUS, 'gameOverWin');

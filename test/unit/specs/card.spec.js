@@ -8,6 +8,7 @@ describe('Card.vue', () => {
       propsData: {
         card: {
           name: 'test-card-name',
+          type: 'monster',
           attributes: {
             attack: 100,
             defense: 200,

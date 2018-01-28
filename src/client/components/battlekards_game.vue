@@ -137,6 +137,14 @@
     box-shadow: inset 0px 1px 3px #757D75;
   }
 
+  .cardFacedown {
+    background-color: #757d750a;
+  }
+
+  .pointer {
+    cursor: pointer;
+  }
+
   #bottomBar {
     bottom: 0;
   }
@@ -178,9 +186,10 @@
         </div>
       </div>
       <div id="opponent">
-        <div class="magic scrollX">
+        <div class="traps scrollX">
           <div class="scrollXCardContainer">
-            <div v-for="n in 5" class="card cardPlaceholder"></div>
+            <div v-for="n in opponent.trapsSize" class="card cardFacedown"></div>
+            <div v-for="n in (5 - opponent.trapsSize)" class="card cardPlaceholder"></div>
           </div>
         </div>
         <div class="monsters scrollX">
@@ -208,9 +217,15 @@
             <div v-for="n in (5 - myPlayer.monsters.length)" class="card cardPlaceholder"></div>
           </div>
         </div>
-        <div class="magic scrollX">
+        <div class="traps scrollX">
           <div class="scrollXCardContainer">
-            <div v-for="n in 5" class="card cardPlaceholder"></div>
+            <div
+              v-for="card in myPlayer.traps"
+              :key="card.id"
+              class="card cardFacedown pointer"
+              v-on:click="setSelectedCard({ card, cardField: 'trap' })"
+            />
+            <div v-for="n in (5 - myPlayer.traps.length)" class="card cardPlaceholder"></div>
           </div>
         </div>
         <div class="hand scrollX">

@@ -17,8 +17,15 @@
     overflow: hidden;
   }
 
-  .atk {
+  .bottom {
     margin-top: 7vh;
+  }
+
+  .description {
+    display: block;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .cardPulse {
@@ -45,15 +52,24 @@
         {{ card.name }}
       </span>
     </div>
-    <div class="atk">
-      <span>
-        Atk: {{ card.attributes.attack }}
-      </span>
-    </div>
-    <div class="def">
-      <span>
-        Def: {{ card.attributes.defense }}
-      </span>
+    <div class="bottom">
+      <div v-if="card.type === 'monster'">
+        <div class="atk">
+          <span>
+            Atk: {{ card.attributes.attack }}
+          </span>
+        </div>
+        <div class="def">
+          <span>
+            Def: {{ card.attributes.defense }}
+          </span>
+        </div>
+      </div>
+      <div v-else-if="card.type === 'trap'">
+        <span class="description" :title="card.description">
+          {{ card.description }}
+        </span>
+      </div>
     </div>
   </div>
 </template>
