@@ -60,6 +60,7 @@
         {{ card.name }}
       </span>
     </div>
+  
     <div class="bottom">
       <div v-if="card.type === 'monster'">
         <div class="atk">
@@ -72,6 +73,7 @@
             Def: {{ card.attributes.defense }}
           </span>
         </div>
+
       </div>
       <div v-else-if="card.type === 'trap'">
         <span class="description" :title="card.description">
@@ -85,7 +87,7 @@
 <script>
   import { mapGetters, mapMutations } from 'vuex';
   import { SET_SELECTED_CARD } from '../store/mutation-types';
-  
+
   export default {
     props: {
       card: {

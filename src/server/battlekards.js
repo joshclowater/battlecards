@@ -93,9 +93,10 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         game.playersTurn = playersTurn;
         // Set status of attack monsters
         game.players[game.playersTurn].monsters =
-          game.players[game.playersTurn].monsters.map(monster => (
+          game.players[game.playersTurn].monsters.map( monster => (
             Object.assign(monster, { canAttack: true })
           ));
+        
         // Allow for summon
         game.players[game.playersTurn].hasSummoned = false;
         // Active player draw card
@@ -115,7 +116,8 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
       }
     });
 
-    socket.on('summon', (cardId) => {
+    socket.on('summon', (position, cardId) => {
+
       if (game.gameStarted &&
           game.playersTurn === playerId &&
           !game.players[playerId].hasSummoned) {
@@ -125,18 +127,39 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         if (monsterIndex !== -1) {
           const monster = _.cloneDeep(game.players[game.playersTurn].hand[monsterIndex]);
           if (monster.type === 'monster') {
-            monster.canAttack = false;
+              if (position==='attak'){
+                monster.canAttack = false;
+                monster.position = 'attak';
+                game.players[playerId].hasSummoned = true; // Player cannot summon again
+                game.players[game.playersTurn].hand.splice(monsterIndex, 1);
+                game.players[game.playersTurn].monsters.push(monster);
 
-            game.players[playerId].hasSummoned = true; // Player cannot summon again
-            game.players[game.playersTurn].hand.splice(monsterIndex, 1);
-            game.players[game.playersTurn].monsters.push(monster);
-
-            socket.emit('summoned', monster);
-            sockets[game.inactivePlayer].emit('opponentSummoned', {
-              monster,
-              opponentsHandSize: game.players[game.playersTurn].hand.length,
-            });
-          } else {
+                socket.emit('summoned', monster);
+                sockets[game.inactivePlayer].emit('opponentSummoned', {
+                  monster,
+                  opponentsHandSize: game.players[game.playersTurn].hand.length,
+                  position,
+                });
+              }  else {
+                  monster.canAttack = false;
+                  monster.position = 'defense';
+                  game.players[playerId].hasSummoned = true; // Player cannot summon again
+                  game.players[game.playersTurn].hand.splice(monsterIndex, 1);
+                  game.players[game.playersTurn].monsters.push(monster);
+                  //Different here
+                  socket.emit('summoned', monster);
+                  //Remove monster data for defense
+                    monster.name='';
+                    monster.attributes.attack=''
+                    monster.attributes.defense=''
+                  sockets[game.inactivePlayer].emit('opponentSummoned', {
+                    monster,
+                    opponentsHandSize: game.players[game.playersTurn].hand.length,
+                    position,
+                  });
+                }
+            }
+          else {
             socket.emit('invalidMove', 'card is not monster');
           }
         } else {
