@@ -36,3 +36,9 @@ export const selectedCardId = (state) => {
   }
   return undefined;
 };
+
+export const endTurnIsOnlyMove = state =>
+  isMyTurn(state) &&
+    myPlayerHasSummoned(state) &&
+    !myPlayerHasTrapInHand(state) &&
+    !myPlayerHasAttackMonster(state);
