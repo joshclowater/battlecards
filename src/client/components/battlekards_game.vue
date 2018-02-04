@@ -257,7 +257,7 @@
             v-if="!isLandscape"
             v-on:click="setShowModal(true); setSelectedCard(undefined);"
             class="iconContainer right circle"
-            v-bind:class="hasAction"
+            v-bind:class="{ pulse: endTurnIsOnlyMove && !showModal }"
           >
             <span id="actionIcon" class="unicodeIcon">
               &#9876;
@@ -298,15 +298,8 @@
       ...mapGetters([
         'isMyTurn',
         'hasSelectedCard',
+        'endTurnIsOnlyMove',
       ]),
-      hasAction() {
-        // XXX fix this
-        return {
-          pulse: this.isMyTurn &&
-              !this.showModal &&
-              this.myPlayer.hasSummoned,
-        };
-      },
     },
   };
 </script>

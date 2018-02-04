@@ -104,7 +104,7 @@
             <span>End your turn</span>
           </li>
         </ul>
-        <button id="endTurnButton" v-if="isMyTurn" v-on:click="endTurn" v-bind:class="endTurnButtonClass()">
+        <button id="endTurnButton" v-if="isMyTurn" v-on:click="endTurn" v-bind:class="{ pulse: endTurnIsOnlyMove }">
           End turn
         </button>
       </div>
@@ -130,6 +130,7 @@
         'myPlayerHasSummoned',
         'myPlayerHasTrapInHand',
         'myPlayerHasAttackMonster',
+        'endTurnIsOnlyMove',
       ]),
     },
     methods: {
@@ -161,10 +162,6 @@
       setTrap() {
         console.log('setTrap', this.selectedCard.card.id);
         window.battlekardsSocket.emit('setTrap', this.selectedCard.card.id);
-      },
-
-      endTurnButtonClass() {
-        return this.isMyTurn && this.myPlayerHasSummoned ? 'pulse' : '';
       },
     },
   };
