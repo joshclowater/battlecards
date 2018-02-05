@@ -45,9 +45,16 @@
         <button
           v-if="isMyTurn && selectedCard.cardField === 'myHand' && !myPlayerHasSummoned"
           id="summonButton"
-          v-on:click="summon"
+          v-on:click="summon('attak')"
         >
           Summon Attak
+        </button>
+        <button
+          v-if="isMyTurn && selectedCard.cardField === 'myHand' && !myPlayerHasSummoned"
+          id="summonButton"
+          v-on:click="summon('defense')"
+        >
+          Summon Defense
         </button>
         <div v-else-if="isMyTurn && selectedCard.cardField === 'myMonster' && selectedCard.card.canAttack">
           <button
@@ -139,9 +146,9 @@
         window.battlekardsSocket.emit('endTurn');
       },
 
-      summon() {
-        console.log('summon()', this.selectedCard.card.id);
-        window.battlekardsSocket.emit('summon', this.selectedCard.card.id);
+      summon(position) {
+        console.log('summon()', position, this.selectedCard.card.id);
+        window.battlekardsSocket.emit('summon', position, this.selectedCard.card.id);
       },
 
       attackShield() {

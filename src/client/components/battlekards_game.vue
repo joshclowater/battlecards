@@ -196,12 +196,23 @@
           <div class="scrollXCardContainer">
             <card
               v-for="card in opponent.monsters"
+              v-if="card.position === 'defense'"
+              :key="card.id"
+              :card="card"
+              cardField="opponentMonster"
+              class="card cardFacedown pointer"
+            />
+            <card
+              v-for="card in opponent.monsters"
+              v-if="card.position === 'attak'"
               :key="card.id"
               :card="card"
               cardField="opponentMonster"
             />
             <div v-for="n in (5 - opponent.monsters.length)" class="card cardPlaceholder"></div>
           </div>
+
+
         </div>
       </div>
       <hr />

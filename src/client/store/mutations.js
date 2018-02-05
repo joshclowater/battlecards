@@ -61,6 +61,7 @@ export default {
   },
 
   [types.OPPONENT_SUMMONED](state, response) {
+    //
     state.opponent.monsters.push(response.monster);
     state.opponent.handSize = response.opponentsHandSize;
   },
