@@ -108,8 +108,26 @@
           End turn
         </button>
       </div>
+      <div v-else-if="isMyTrapPhase">
+        <span>
+          {{ opponentAttackingMonsterName }} is attacking {{ attackingMonsterTarget }}. You may activate a trap:
+        </span>
+        <button
+          v-for="trap in myTraps"
+          class="activate-trap"
+          v-on:click="activateTrap(trap.id)"
+        >
+          {{ trap.name }}
+        </button>
+        <button v-on:click="activateTrap('skip')">
+          No trap
+        </button>
+      </div>
+      <span v-else-if="isOpponentTrapPhase">
+        Waiting to see if opponent activates a trap card.
+      </span>
       <span v-else>
-        It is currently the other players turn.
+        It is currently the other player's turn.
       </span>
     </div>
   </div>
@@ -125,6 +143,11 @@
       ]),
       ...mapGetters([
         'isMyTurn',
+        'isMyTrapPhase',
+        'isOpponentTrapPhase',
+        'myTraps',
+        'opponentAttackingMonsterName',
+        'attackingMonsterTarget',
         'opponentsShieldsSize',
         'opponentsMonsters',
         'myPlayerHasSummoned',
@@ -162,6 +185,11 @@
       setTrap() {
         console.log('setTrap', this.selectedCard.card.id);
         window.battlekardsSocket.emit('setTrap', this.selectedCard.card.id);
+      },
+
+      activateTrap(trapId) {
+        console.log('activateTrap', trapId);
+        window.battlekardsSocket.emit('activateTrap', trapId);
       },
     },
   };

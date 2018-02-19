@@ -39,6 +39,13 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         traps: [],
         hasSummoned: false,
       };
+      game.players[playerId].hand.push({
+        id: uuid(),
+        name: 'Trapping pit',
+        type: 'trap',
+        effect: 'destroyMonster',
+        description: 'These pits, which can measure up to 4 by 7 metres (13 ft × 23 ft) in size and be up to several metres deep, were camouflaged with branches and leaves.',
+      });
       for (let i = 0; i < NUM_CARDS_ON_GAME_START; i += 1) {
         game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
       }
@@ -61,6 +68,13 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         traps: [],
         hasSummoned: false,
       };
+      game.players[playerId].hand.push({
+        id: uuid(),
+        name: 'Trapping pit',
+        type: 'trap',
+        effect: 'destroyMonster',
+        description: 'These pits, which can measure up to 4 by 7 metres (13 ft × 23 ft) in size and be up to several metres deep, were camouflaged with branches and leaves.',
+      });
       for (let i = 0; i < NUM_CARDS_ON_GAME_START; i += 1) {
         game.players[playerId].hand.push(deckUtils.drawFrom(game.players[playerId].deck));
       }
@@ -174,7 +188,62 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
       }
     });
 
+    const attackShield = (attackingMonster) => {
+      // Move shield into hand
+      const shield = deckUtils.drawFrom(game.players[game.inactivePlayer].shields);
+      game.players[game.inactivePlayer].hand.push(shield);
+      attackingMonster.canAttack = false; // eslint-disable-line
+      sockets[game.playersTurn].emit('attacked', attackingMonster.id, 'shield');
+      sockets[game.inactivePlayer].emit('opponentAttacked', attackingMonster.id, 'shield', { shield });
+    };
+
+    const endGame = () => {
+      games[game.id].gameOver = true;
+      sockets[game.playersTurn].emit('win');
+      sockets[game.inactivePlayer].emit('lose');
+      sockets[game.playersTurn].disconnect(true);
+      delete sockets[playerId];
+      sockets[game.inactivePlayer].disconnect(true);
+      delete sockets[game.inactivePlayer];
+      delete games[game.id];
+    };
+
+    const attackMonster = (targetMonster, attackingMonster) => {
+      const target = targetMonster.id;
+      const attackingMonsterId = attackingMonster.id;
+      const destroyedMonsters = [];
+      if (targetMonster.attributes.attack < attackingMonster.attributes.attack) {
+        game.players[game.inactivePlayer].monsters =
+          game.players[game.inactivePlayer].monsters.filter(monster => (
+            monster.id !== target
+          ));
+        destroyedMonsters.push(target);
+      } else if (targetMonster.attributes.attack > attackingMonster.attributes.attack) {
+        game.players[game.playersTurn].monsters =
+          game.players[game.playersTurn].monsters.filter(monster => (
+            monster.id !== attackingMonster.id
+          ));
+        destroyedMonsters.push(attackingMonsterId);
+      } else {
+        game.players[game.inactivePlayer].monsters =
+          game.players[game.inactivePlayer].monsters.filter(monster => (
+            monster.id !== target
+          ));
+        game.players[game.playersTurn].monsters =
+          game.players[game.playersTurn].monsters.filter(monster => (
+            monster.id !== attackingMonster.id
+          ));
+        destroyedMonsters.push(target);
+        destroyedMonsters.push(attackingMonsterId);
+      }
+      console.log(`${attackingMonster.name} (Atk: ${attackingMonster.attributes.attack}) attacked ${targetMonster.name} (Atk: ${targetMonster.attributes.attack})`);
+      sockets[game.playersTurn].emit('attacked', attackingMonsterId, target, { destroyedMonsters });
+      sockets[game.inactivePlayer].emit('opponentAttacked', attackingMonsterId, target, { destroyedMonsters });
+    };
+
     socket.on('attack', (attackingMonsterId, target) => {
+      console.log('attack', attackingMonsterId, target);
+
       if (game.gameStarted && game.playersTurn === playerId) {
         const attackingMonster = game.players[game.playersTurn].monsters.find(cardInHand => (
           cardInHand.id === attackingMonsterId
@@ -182,57 +251,47 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         if (attackingMonster !== undefined) {
           if (attackingMonster.canAttack) {
             if (target === 'shield' && game.players[game.inactivePlayer].shields.length > 0) {
-              // Move shield into hand
-              const shield = deckUtils.drawFrom(game.players[game.inactivePlayer].shields);
-              game.players[game.inactivePlayer].hand.push(shield);
-              attackingMonster.canAttack = false;
-              socket.emit('attacked', attackingMonsterId, target);
-              sockets[game.inactivePlayer].emit('opponentAttacked', attackingMonsterId, target, { shield });
+              if (game.players[game.inactivePlayer].traps.length) {
+                game.playersTurn = `${game.playersTurn}-trapPhase`;
+                game.currentAttack = {
+                  target,
+                  attackingMonster,
+                };
+                socket.emit('opponentTrapPhase');
+                sockets[game.inactivePlayer].emit('trapPhase', attackingMonster.id, target);
+              } else {
+                attackShield(attackingMonster);
+              }
             } else if (target === 'player' && game.players[game.inactivePlayer].shields.length === 0) {
-              // End game
-              games[game.id].gameOver = true;
-              socket.emit('win');
-              sockets[game.inactivePlayer].emit('lose');
-              socket.disconnect(true);
-              delete sockets[playerId];
-              sockets[game.inactivePlayer].disconnect(true);
-              delete sockets[game.inactivePlayer];
-              delete games[game.id];
+              if (game.players[game.inactivePlayer].traps.length) {
+                game.playersTurn = `${game.playersTurn}-trapPhase`;
+                game.currentAttack = {
+                  target,
+                  attackingMonster,
+                };
+                socket.emit('opponentTrapPhase');
+                sockets[game.inactivePlayer].emit('trapPhase', attackingMonster.id, target);
+              } else {
+                endGame();
+              }
             } else {
               const targetMonster = _.cloneDeep((
                 game.players[game.inactivePlayer].monsters.find(opponentMonster => (
                   opponentMonster.id === target
                 ))
               ));
-              const destroyedMonsters = [];
               if (targetMonster !== undefined) {
-                if (targetMonster.attributes.attack < attackingMonster.attributes.attack) {
-                  game.players[game.inactivePlayer].monsters =
-                    game.players[game.inactivePlayer].monsters.filter(monster => (
-                      monster.id !== target
-                    ));
-                  destroyedMonsters.push(target);
-                } else if (targetMonster.attributes.attack > attackingMonster.attributes.attack) {
-                  game.players[game.playersTurn].monsters =
-                    game.players[game.playersTurn].monsters.filter(monster => (
-                      monster.id !== attackingMonster.id
-                    ));
-                  destroyedMonsters.push(attackingMonsterId);
+                if (game.players[game.inactivePlayer].traps.length) {
+                  game.playersTurn = `${game.playersTurn}-trapPhase`;
+                  game.currentAttack = {
+                    target: targetMonster,
+                    attackingMonster,
+                  };
+                  socket.emit('opponentTrapPhase');
+                  sockets[game.inactivePlayer].emit('trapPhase', attackingMonster.id, target);
                 } else {
-                  game.players[game.inactivePlayer].monsters =
-                    game.players[game.inactivePlayer].monsters.filter(monster => (
-                      monster.id !== target
-                    ));
-                  game.players[game.playersTurn].monsters =
-                    game.players[game.playersTurn].monsters.filter(monster => (
-                      monster.id !== attackingMonster.id
-                    ));
-                  destroyedMonsters.push(target);
-                  destroyedMonsters.push(attackingMonsterId);
+                  attackMonster(targetMonster, attackingMonster);
                 }
-                console.log(`${attackingMonster.name} (Atk: ${attackingMonster.attributes.attack}) attacked ${targetMonster.name} (Atk: ${targetMonster.attributes.attack})`);
-                socket.emit('attacked', attackingMonsterId, target, { destroyedMonsters });
-                sockets[game.inactivePlayer].emit('opponentAttacked', attackingMonsterId, target, { destroyedMonsters });
               } else {
                 socket.emit('invalidMove', 'invalid target');
               }
@@ -245,6 +304,66 @@ exports.initialiseBattlekardsSocketIo = function initialiseBattlekardsSocketIo(i
         }
       } else {
         socket.emit('invalidMove', 'not your turn');
+      }
+    });
+
+    const attackFromTrapPhase = () => {
+      game.playersTurn = game.playersTurn.slice(0, game.playersTurn.indexOf('-trapPhase'));
+      if (game.currentAttack.target === 'shield') {
+        attackShield(game.currentAttack.attackingMonster);
+      } else if (game.currentAttack.target === 'opponent') {
+        endGame();
+      } else {
+        attackMonster(game.currentAttack.target, game.currentAttack.attackingMonster);
+      }
+      delete game.currentAttack;
+    };
+
+    socket.on('activateTrap', (trapId) => {
+      const otherPlayerId = Object.keys(game.players).find(gamePlayerId => (
+        gamePlayerId !== playerId
+      ));
+      if (game.gameStarted && game.playersTurn === `${otherPlayerId}-trapPhase`) {
+        if (trapId !== 'skip') {
+          const trap = game.players[playerId].traps.find(trapLayed => (
+            trapLayed.id === trapId
+          ));
+          if (trap !== undefined) {
+            if (trap.effect === 'none') {
+              game.players[playerId].traps.filter(trapLayed => (
+                trapLayed.id !== trapId
+              ));
+              socket.emit('trapActivated', trapId, 'none');
+              sockets[otherPlayerId].emit('opponentTrapActivated', trap, 'none');
+            } else if (trap.effect === 'destroyMonster') {
+              game.players[otherPlayerId].monsters.filter(monster => (
+                monster !== game.currentAttack.attackingMonster.id
+              ));
+              game.players[playerId].traps.filter(trapLayed => (
+                trapLayed.id !== trapId
+              ));
+              socket.emit('trapActivated', trapId, 'destroyedMonsters', [game.currentAttack.attackingMonster.id]);
+              sockets[otherPlayerId].emit('opponentTrapActivated', trap, 'destroyedMonsters', [game.currentAttack.attackingMonster.id]);
+              game.playersTurn = game.playersTurn.slice(0, game.playersTurn.indexOf('-trapPhase'));
+              delete game.currentAttack;
+              return;
+            } else {
+              socket.emit('invalidMove', 'unhandled trap effect');
+              console.log('Unhandled trap effect: ', trap.effect);
+              return;
+            }
+
+            attackFromTrapPhase();
+          } else {
+            socket.emit('invalidMove', 'trap card not set');
+          }
+        } else {
+          socket.emit('trapPhaseEnded');
+          sockets[otherPlayerId].emit('opponentTrapPhaseEnded');
+          attackFromTrapPhase();
+        }
+      } else {
+        socket.emit('invalidMove', 'not your trap phase');
       }
     });
 

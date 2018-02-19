@@ -5,9 +5,10 @@
     "version": "0.2.0",
     "configurations": [
         {
+            "name": "Launch via NPM",
             "type": "node",
             "request": "launch",
-            "name": "Launch via NPM",
+            "cwd": "${workspaceFolder}",
             "runtimeExecutable": "npm",
             "windows": {
                 "runtimeExecutable": "npm.cmd"
@@ -16,7 +17,8 @@
                 "run-script",
                 "debug"
             ],
-            "port": 5858
+            "port": 9229,
+            "protocol": "inspector"
         }
     ]
 }

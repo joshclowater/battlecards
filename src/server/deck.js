@@ -7,7 +7,7 @@ exports.createDeck = function createDeck() {
       id: uuid(),
       name: 'Fake trap',
       type: 'trap',
-      effects: [],
+      effect: 'none',
       description: 'Does nothing. Just a decoy.',
     }, {
       id: uuid(),

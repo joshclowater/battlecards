@@ -12,10 +12,15 @@ export default {
     state.gameStatus = gameStatus;
   },
 
+  [types.SET_PLAYERS_TURN](state, playersTurn) {
+    state.playersTurn = playersTurn;
+  },
+
   [types.START_GAME](state, response) {
     state.gameStatus = 'playing';
     state.playersTurn = response.playersTurn;
     state.opponent = {
+      playerId: response.opponentId,
       deckSize: response.opponentsDeckSize,
       shieldsSize: response.opponentsShieldsSize,
       handSize: response.opponentsHandSize,
@@ -114,6 +119,40 @@ export default {
   [types.OPPONENT_TRAP_SET](state) {
     state.opponent.trapsSize += 1;
     state.opponent.handSize -= 1;
+  },
+
+  [types.TRAP_PHASE](state, { attackingMonsterId, target }) {
+    state.playersTurn = `${state.myPlayer.playerId}-TRAP_PHASE`;
+    state.attackingMonsterId = attackingMonsterId;
+    state.attackingMonsterTarget = target;
+
+    state.selectedCard = undefined;
+  },
+
+  [types.OPPONENT_TRAP_PHASE](state) {
+    state.playersTurn = `${state.opponent.playerId}-TRAP_PHASE`;
+
+    state.selectedCard = undefined;
+  },
+
+  [types.REMOVE_OPPONENT_MONSTERS](state, monsterIds) {
+    state.opponent.monsters = state.opponent.monsters.filter(monster => (
+      (monsterIds.indexOf(monster.id) === -1)
+    ));
+  },
+
+  [types.REMOVE_MY_MONSTERS](state, monsterIds) {
+    state.myPlayer.monsters = state.myPlayer.monsters.filter(monster => (
+      monsterIds.indexOf(monster.id) === -1
+    ));
+  },
+
+  [types.REMOVE_MY_TRAP](state, trapId) {
+    state.myPlayer.traps = state.myPlayer.traps.filter(trap => trap.id !== trapId);
+  },
+
+  [types.REMOVE_OPPONENT_TRAP](state) {
+    state.opponent.trapsSize -= 1;
   },
 
   [types.SET_SELECTED_CARD](state, selectedCard) {
